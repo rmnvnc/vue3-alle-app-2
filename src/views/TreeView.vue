@@ -4,6 +4,6 @@
 
 <template>
     <main>
-        Im home
+        Im TREE view
     </main>
 </template>

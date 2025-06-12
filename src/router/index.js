@@ -1,20 +1,36 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import HomeView2 from '@/views/HomeView2.vue'
+import OrgView from '@/views/OrgView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
         {
             path: '/',
-            name: 'home',
+            name: 'org-list',
             component: HomeView,
         },
         {
-            path: '/s',
-            name: 'home2',
-            component: HomeView2,
+            path: '/:orgId',
+            name: 'org-view',
+            props: true,
+            component: () => import('@/views/OrgView.vue'),
+            meta: { requiresAuth: true },
         },
+        {
+            path: '/:orgId/:orchardId',
+            name: 'orchard-view',
+            component: () => import('@/views/OrchardView.vue'),
+            props: true,
+            meta: { requiresAuth: true },
+        },
+        {
+            path: '/:orgId/:orchardId/:treeId',
+            name: 'tree-view',
+            component: () => import('@/views/TreeView.vue'),
+            props: true,
+            meta: { requiresAuth: true },
+        }
         // {
         //   path: '/about',
         //   name: 'about',

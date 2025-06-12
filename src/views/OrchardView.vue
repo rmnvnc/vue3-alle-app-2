@@ -4,6 +4,6 @@
 
 <template>
     <main>
-        Im home
+        Im ORCHARD view
     </main>
 </template>
