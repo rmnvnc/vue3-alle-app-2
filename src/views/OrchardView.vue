@@ -3,6 +3,7 @@ import { onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOrganizationsStore } from '@/stores/organizations'
 import { storeToRefs } from 'pinia'
+import { useRemainingTime } from '@/composables/useRemainingTime'
 
 const route = useRoute()
 
@@ -20,6 +21,17 @@ onMounted(async () => {
 
     await orgStore.fetchTrees(orgId.value, orchardId.value)
 })
+
+const trees = computed(() => {
+    const list = treesByOrchard.value[orchardId.value] || []
+    return list.map(tree => {
+        const { remaining } = useRemainingTime(tree.wateredUntil)
+        return {
+            ...tree,
+            remaining,
+        }
+    })
+})
 </script>
 
 <template>
@@ -29,12 +41,12 @@ onMounted(async () => {
         <div v-else>
             <h2>Orchard: {{ orchardId }}</h2>
             <ul>
-                <li v-for="tree in treesByOrchard[orchardId] || []" :key="tree.id">
+                <li v-for="tree in trees" :key="tree.id">
                     <router-link :to="{
                         name: 'tree-view',
                         params: { orgId: orgId, orchardId: orchardId, treeId: tree.id }
                     }">
-                        {{ tree.name }}
+                        {{ tree.name }} - {{ tree.remaining }}
                     </router-link>
                 </li>
             </ul>
