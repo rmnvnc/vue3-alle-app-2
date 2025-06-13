@@ -1,18 +1,31 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { db } from '../firebase.js'
 
 
 export const useOrganizationsStore = defineStore('organizations', () => {
-    const organization = ref(null)
-    const orchards = ref([])
-    const treesByOrchard = ref({})
     const loading = ref(false)
     const error = ref(null)
+    const CACHE_TTL = 5 * 60 * 1000
+
+    const orgCache = ref({ data: null, fetchedAt: 0 })
+    const organization = computed(() => orgCache.value.data)
+
+    const orchards = ref([])
+
+    const treesByOrchard = ref({})
+
 
     async function fetchOrganization(orgId) {
-        console.log('[🐶] fetchOrganization running')
+        const now = Date.now()
+
+        if (orgCache.value.data?.id === orgId && (now - orgCache.value.fetchedAt) < CACHE_TTL) {
+            console.log('[♻️] cached Organization')
+            return
+        }
+
+        console.log('[📨] fetchOrganization running')
         loading.value = true
         error.value = null
 
@@ -29,7 +42,8 @@ export const useOrganizationsStore = defineStore('organizations', () => {
                 throw new Error(`Organization with ID "${orgId}" does not exist`)
             }
 
-            organization.value = { id: orgSnapshot.id, ...orgSnapshot.data() }
+            const loadedOrg = { id: orgSnapshot.id, ...orgSnapshot.data() }
+            orgCache.value = { data: loadedOrg, fetchedAt: now }
 
             // Load orchards in Organization
             const orchardsCol = collection(db, 'organizations', orgId, 'orchards')
@@ -49,7 +63,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     }
 
     async function fetchTrees(orgId, orchardId) {
-        console.log('[🐶] fetchTrees running')
+        console.log('[📨] fetchTrees running')
         loading.value = true
         error.value = null
 
