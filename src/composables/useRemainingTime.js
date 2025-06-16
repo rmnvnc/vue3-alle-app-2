@@ -46,5 +46,5 @@ function formatDays(count) {
         word = 'dňami'
     }
 
-    return count < 0 ? `pred ${abs} ${word}` : `za ${abs} ${word}`
+    return count < 0 ? `Vyschol pred ${abs} ${word}` : `Uschne za ${abs} ${word}`
 }

@@ -9,13 +9,22 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     const error = ref(null)
     const CACHE_TTL = 5 * 60 * 1000
 
+    // organization and orchards cached together!
     const orgCache = ref({ data: null, fetchedAt: 0 })
     const organization = computed(() => orgCache.value.data)
-
     const orchards = ref([])
 
-    const treesByOrchard = ref({})
 
+    const treesByOrchardCache = ref({})
+    const treesByOrchard = computed(() => {
+        const result = {}
+        for (const id in treesByOrchardCache.value) {
+            result[id] = treesByOrchardCache.value[id].data
+        }
+        return result
+    })
+
+    // NEED CACHE!
     // Z tohoto spravit pole pre cachovanie!
     const treeDetail = ref(null)
 
@@ -25,7 +34,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         const now = Date.now()
 
         if (orgCache.value.data?.id === orgId && (now - orgCache.value.fetchedAt) < CACHE_TTL) {
-            console.log('[♻️] cached Organization')
+            console.log('[♻️] cached Organization and Orchards')
             return
         }
 
@@ -67,6 +76,13 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     }
 
     async function fetchTrees(orgId, orchardId) {
+        const now = Date.now()
+
+        if (treesByOrchardCache.value[orchardId] && (now - treesByOrchardCache.value[orchardId]?.fetchedAt) < CACHE_TTL) {
+            console.log('[♻️] cached Orchard trees')
+            return
+        }
+
         console.log('[📨] fetchTrees running')
         loading.value = true
         error.value = null
@@ -78,7 +94,18 @@ export const useOrganizationsStore = defineStore('organizations', () => {
             const treesSnap = await getDocs(
                 collection(db, 'organizations', orgId, 'orchards', orchardId, 'trees')
             );
-            treesByOrchard.value[orchardId] = treesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            treesByOrchardCache.value[orchardId] = {
+                data: treesSnap.docs.map(doc => {
+                    const { name, slug, wateredUntil } = doc.data()
+                    return {
+                        id: doc.id,
+                        name,
+                        slug,
+                        wateredUntil
+                    }
+                }),
+                fetchedAt: now
+            }
         } catch (e) {
             error.value = e.message
         } finally {
@@ -119,7 +146,11 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         treeDetail,
         fetchOrganization,
         fetchTrees,
-        fetchTree
+        fetchTree,
+
+        // ONLY FOR TESTING
+        orgCache,
+        treesByOrchardCache
     }
 
 

@@ -15,7 +15,6 @@ const [treeId, ...slugParts] = treeParam.split('-')
 // const slug = slugParts.join('-')
 
 onMounted(() => {
-    console.log(treeId)
     orgStore.fetchTree(orgId, orchardId, treeId)
 })
 
