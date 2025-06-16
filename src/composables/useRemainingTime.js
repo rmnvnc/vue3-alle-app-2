@@ -21,16 +21,30 @@ export function useRemainingTime(wateredUntil) {
         const now = new Date()
         const diffMs = targetDate - now
 
-        if (diffMs <= 0) {
-            return 'Potrebné poliať'
-        }
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-        const hours = Math.floor(diffMs / (1000 * 60 * 60))
-        const minutes = Math.floor((diffMs / (1000 * 60)) % 60)
-        const seconds = Math.floor((diffMs / 1000) % 60)
-
-        return `Uschne za ${hours}h ${minutes}m ${seconds}s`
+        return `${formatDays(days)}`
     })
 
     return { remaining }
+}
+
+function formatDays(count) {
+    const abs = Math.abs(count)
+    const lastTwoDigits = abs % 100
+    const lastDigit = abs % 10
+
+    let word
+
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+        word = 'dňami'
+    } else if (lastDigit === 1) {
+        word = count < 0 ? 'dňom' : 'deň'
+    } else if (lastDigit >= 2 && lastDigit <= 4) {
+        word = count < 0 ? 'dňami' : 'dni'
+    } else {
+        word = 'dňami'
+    }
+
+    return count < 0 ? `pred ${abs} ${word}` : `za ${abs} ${word}`
 }
