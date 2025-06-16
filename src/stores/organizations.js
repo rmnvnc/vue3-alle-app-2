@@ -16,7 +16,11 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
     const treesByOrchard = ref({})
 
+    // Z tohoto spravit pole pre cachovanie!
+    const treeDetail = ref(null)
 
+
+    // with organization i get orchards
     async function fetchOrganization(orgId) {
         const now = Date.now()
 
@@ -82,14 +86,40 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
+    async function fetchTree(orgId, orchardId, treeId) {
+        console.log('[📨] fetchTree running')
+        loading.value = true
+        error.value = null
+
+        try {
+            if (!orgId || !orchardId || !treeId) {
+                throw new Error('Organization ID or Orchard ID or Tree ID missing')
+            }
+
+            const snap = await getDoc(
+                doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
+            )
+
+            if (!snap.exists()) throw new Error('Tree not found')
+            treeDetail.value = { id: snap.id, ...snap.data() }
+        } catch (e) {
+            error.value = e.message
+        } finally {
+            loading.value = false
+        }
+
+    }
+
     return {
         loading,
         error,
         organization,
         orchards,
         treesByOrchard,
+        treeDetail,
         fetchOrganization,
-        fetchTrees
+        fetchTrees,
+        fetchTree
     }
 
 

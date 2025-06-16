@@ -44,7 +44,7 @@ const trees = computed(() => {
                 <li v-for="tree in trees" :key="tree.id">
                     <router-link :to="{
                         name: 'tree-view',
-                        params: { orgId: orgId, orchardId: orchardId, treeId: tree.id }
+                        params: { orgId: orgId, orchardId: orchardId, treeParam: `${tree.id}-${tree.slug}` }
                     }">
                         {{ tree.name }} - {{ tree.remaining }}
                     </router-link>

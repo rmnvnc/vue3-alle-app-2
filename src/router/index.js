@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import OrgView from '@/views/OrgView.vue'
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,7 +24,7 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
-            path: '/:orgId/:orchardId/:treeId',
+            path: '/:orgId/:orchardId/:treeParam',
             name: 'tree-view',
             component: () => import('@/views/TreeView.vue'),
             props: true,
