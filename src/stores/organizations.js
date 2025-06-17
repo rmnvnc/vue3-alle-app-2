@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore'
 import { db } from '../firebase.js'
@@ -60,19 +60,17 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
-    const treesByOrchardCache = ref({})
-    const treesByOrchard = computed(() => {
-        const result = {}
-        for (const id in treesByOrchardCache.value) {
-            result[id] = treesByOrchardCache.value[id].data
-        }
-        return result
-    })
+    const treesForOrchardCache = reactive(new Map())
+
+    function getTreesForOrchard(id) {
+        return treesForOrchardCache.get(id)?.data || []
+    }
 
     async function fetchTrees(orgId, orchardId) {
         const now = Date.now()
+        const orchard = treesForOrchardCache.get(orchardId)
 
-        if (treesByOrchardCache.value[orchardId] && (now - treesByOrchardCache.value[orchardId]?.fetchedAt) < CACHE_TTL) {
+        if (orchard && (now - orchard.fetchedAt) < CACHE_TTL) {
             console.log('[♻️] cached Orchard trees')
             return
         }
@@ -88,7 +86,8 @@ export const useOrganizationsStore = defineStore('organizations', () => {
             const treesSnap = await getDocs(
                 collection(db, 'organizations', orgId, 'orchards', orchardId, 'trees')
             );
-            treesByOrchardCache.value[orchardId] = {
+
+            treesForOrchardCache.set(orchardId, {
                 data: treesSnap.docs.map(doc => {
                     const { name, slug, wateredUntil } = doc.data()
                     return {
@@ -99,7 +98,8 @@ export const useOrganizationsStore = defineStore('organizations', () => {
                     }
                 }),
                 fetchedAt: now
-            }
+            })
+
         } catch (e) {
             error.value = e.message
         } finally {
@@ -140,15 +140,15 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         error,
         organization,
         orchards,
-        treesByOrchard,
         treeDetail,
+        getTreesForOrchard,
         fetchOrganization,
         fetchTrees,
         fetchTree,
 
         // ONLY FOR TESTING
         orgCache,
-        treesByOrchardCache
+        treesForOrchardCache
     }
 
 

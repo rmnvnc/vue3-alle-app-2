@@ -7,22 +7,21 @@ import { useRemainingTime } from '@/composables/useRemainingTime'
 const { orgId, orchardId } = defineProps(['orgId', 'orchardId'])
 
 const orgStore = useOrganizationsStore()
-const { treesByOrchard, loading, error } = storeToRefs(orgStore)
+const { loading, error } = storeToRefs(orgStore)
+const { getTreesForOrchard } = useOrganizationsStore()
 
 onMounted(async () => {
     await orgStore.fetchTrees(orgId, orchardId)
 })
 
 const trees = computed(() => {
-    const list = treesByOrchard.value[orchardId] || []
-    return list.map(tree => {
-        const { remaining } = useRemainingTime(tree.wateredUntil)
-        return {
-            ...tree,
-            remaining,
-        }
+    const list = getTreesForOrchard(orchardId)
+
+    return [...list].sort((a, b) => {
+        return a.wateredUntil - b.wateredUntil
     })
 })
+
 </script>
 
 <template>
@@ -38,6 +37,10 @@ const trees = computed(() => {
                         params: { orgId: orgId, orchardId: orchardId, treeId: tree.id, treeSlug: tree.slug }
                     }">
                         {{ tree.name }} - {{ tree.remaining }}
+                        <br>
+                        {{ tree.wateredUntil }}
+                        Majitel: nikto<br>
+                        Odroda: Nijaka
                     </router-link>
                     <span v-else>
                         {{ tree.name }} - {{ tree.remaining }}
