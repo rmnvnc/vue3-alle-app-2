@@ -1,20 +1,16 @@
 <script setup>
-import { onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted } from 'vue';
 import { useOrganizationsStore } from '@/stores/organizations';
 import { storeToRefs } from 'pinia';
 
-const route = useRoute()
 const orgStore = useOrganizationsStore()
 const { organization, orchards, loading, error } = storeToRefs(orgStore)
 
-const orgId = ref(null)
+const { orgId } = defineProps(['orgId'])
 
 onMounted(() => {
-    const orgId = route.params.orgId
     orgStore.fetchOrganization(orgId)
 })
-
 
 </script>
 

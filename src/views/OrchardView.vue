@@ -1,29 +1,20 @@
 <script setup>
 import { onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
 import { useOrganizationsStore } from '@/stores/organizations'
 import { storeToRefs } from 'pinia'
 import { useRemainingTime } from '@/composables/useRemainingTime'
 
-const route = useRoute()
-
-const orgId = computed(() => route.params.orgId)
-const orchardId = computed(() => route.params.orchardId)
+const { orgId, orchardId } = defineProps(['orgId', 'orchardId'])
 
 const orgStore = useOrganizationsStore()
-const { organization, orchards, treesByOrchard, loading, error } = storeToRefs(orgStore)
+const { treesByOrchard, loading, error } = storeToRefs(orgStore)
 
 onMounted(async () => {
-    // Did i need fetchOrganization???
-    // if (!organization.value || organization.value.id !== orgId.value) {
-    //     await orgStore.fetchOrganization(orgId.value)
-    // }
-
-    await orgStore.fetchTrees(orgId.value, orchardId.value)
+    await orgStore.fetchTrees(orgId, orchardId)
 })
 
 const trees = computed(() => {
-    const list = treesByOrchard.value[orchardId.value] || []
+    const list = treesByOrchard.value[orchardId] || []
     return list.map(tree => {
         const { remaining } = useRemainingTime(tree.wateredUntil)
         return {
@@ -42,12 +33,15 @@ const trees = computed(() => {
             <h2>Orchard: {{ orchardId }}</h2>
             <ul>
                 <li v-for="tree in trees" :key="tree.id">
-                    <router-link :to="{
+                    <router-link v-if="tree.slug && tree.id" :to="{
                         name: 'tree-view',
-                        params: { orgId: orgId, orchardId: orchardId, treeParam: `${tree.id}-${tree.slug}` }
+                        params: { orgId: orgId, orchardId: orchardId, treeId: tree.id, treeSlug: tree.slug }
                     }">
                         {{ tree.name }} - {{ tree.remaining }}
                     </router-link>
+                    <span v-else>
+                        {{ tree.name }} - {{ tree.remaining }}
+                    </span>
                 </li>
             </ul>
         </div>

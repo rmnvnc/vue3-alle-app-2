@@ -24,20 +24,12 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
-            path: '/:orgId/:orchardId/:treeParam',
+            path: '/:orgId/:orchardId/:treeId-:treeSlug',
             name: 'tree-view',
             component: () => import('@/views/TreeView.vue'),
             props: true,
             meta: { requiresAuth: true },
         }
-        // {
-        //   path: '/about',
-        //   name: 'about',
-        // route level code-splitting
-        // this generates a separate chunk (About.[hash].js) for this route
-        // which is lazy-loaded when the route is visited.
-        //   component: () => import('../views/AboutView.vue'),
-        // },
     ],
 })
 

@@ -14,21 +14,6 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     const organization = computed(() => orgCache.value.data)
     const orchards = ref([])
 
-
-    const treesByOrchardCache = ref({})
-    const treesByOrchard = computed(() => {
-        const result = {}
-        for (const id in treesByOrchardCache.value) {
-            result[id] = treesByOrchardCache.value[id].data
-        }
-        return result
-    })
-
-    // NEED CACHE!
-    // Z tohoto spravit pole pre cachovanie!
-    const treeDetail = ref(null)
-
-
     // with organization i get orchards
     async function fetchOrganization(orgId) {
         const now = Date.now()
@@ -75,6 +60,15 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
+    const treesByOrchardCache = ref({})
+    const treesByOrchard = computed(() => {
+        const result = {}
+        for (const id in treesByOrchardCache.value) {
+            result[id] = treesByOrchardCache.value[id].data
+        }
+        return result
+    })
+
     async function fetchTrees(orgId, orchardId) {
         const now = Date.now()
 
@@ -112,6 +106,10 @@ export const useOrganizationsStore = defineStore('organizations', () => {
             loading.value = false
         }
     }
+
+    // NEED CACHE!
+    // Z tohoto spravit pole pre cachovanie!
+    const treeDetail = ref(null)
 
     async function fetchTree(orgId, orchardId, treeId) {
         console.log('[📨] fetchTree running')

@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
 import { useOrganizationsStore } from '@/stores/organizations';
 import { storeToRefs } from 'pinia';
 import { useRemainingTime } from '@/composables/useRemainingTime';
@@ -8,11 +7,7 @@ import { useRemainingTime } from '@/composables/useRemainingTime';
 const orgStore = useOrganizationsStore()
 const { treeDetail, loading, error } = storeToRefs(orgStore)
 
-const { orgId, orchardId, treeParam } = useRoute().params
-
-// I need clear treeId
-const [treeId, ...slugParts] = treeParam.split('-')
-// const slug = slugParts.join('-')
+const { orgId, orchardId, treeId, treeSlug } = defineProps(['orgId', 'orchardId', 'treeId', 'treeSlug'])
 
 onMounted(() => {
     orgStore.fetchTree(orgId, orchardId, treeId)
