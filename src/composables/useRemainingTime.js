@@ -23,10 +23,13 @@ export function useRemainingTime(wateredUntil) {
 
         const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-        return `${formatDays(days)}`
+        return formatDays(days)
     })
 
-    return { remaining }
+    const remainingText = computed(() => remaining.value.text)
+    const remainingDays = computed(() => remaining.value.days)
+
+    return { remainingText, remainingDays }
 }
 
 function formatDays(count) {
@@ -45,6 +48,9 @@ function formatDays(count) {
     } else {
         word = 'dňami'
     }
+    const text = count < 0
+        ? `Vyschol pred ${abs} ${word}`
+        : `Uschne za ${abs} ${word}`
 
-    return count < 0 ? `Vyschol pred ${abs} ${word}` : `Uschne za ${abs} ${word}`
+    return { text, days: abs }
 }

@@ -107,11 +107,22 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
-    // NEED CACHE!
-    // Z tohoto spravit pole pre cachovanie!
-    const treeDetail = ref(null)
+
+    const treesDetailCache = reactive(new Map())
+
+    function getTree(id) {
+        return treesDetailCache.get(id) || []
+    }
 
     async function fetchTree(orgId, orchardId, treeId) {
+        const now = Date.now()
+
+        const treeDetail = getTree(treeId)
+        if (treeDetail && (now - treeDetail.fetchedAt) < CACHE_TTL) {
+            console.log('[♻️] cached Tree')
+            return
+        }
+
         console.log('[📨] fetchTree running')
         loading.value = true
         error.value = null
@@ -126,7 +137,13 @@ export const useOrganizationsStore = defineStore('organizations', () => {
             )
 
             if (!snap.exists()) throw new Error('Tree not found')
-            treeDetail.value = { id: snap.id, ...snap.data() }
+
+            treesDetailCache.set(snap.id,
+                {
+                    data: { ...snap.data() },
+                    fetchedAt: now
+                }
+            )
         } catch (e) {
             error.value = e.message
         } finally {
@@ -140,15 +157,19 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         error,
         organization,
         orchards,
-        treeDetail,
-        getTreesForOrchard,
+
         fetchOrganization,
+
         fetchTrees,
+        getTreesForOrchard,
+
         fetchTree,
+        getTree,
 
         // ONLY FOR TESTING
         orgCache,
-        treesForOrchardCache
+        treesForOrchardCache,
+        treesDetailCache
     }
 
 
