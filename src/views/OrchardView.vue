@@ -2,7 +2,7 @@
 import { onMounted, computed } from 'vue'
 import { useOrganizationsStore } from '@/stores/organizations'
 import { storeToRefs } from 'pinia'
-import { useRemainingTime } from '@/composables/useRemainingTime'
+import TreeListItem from '@/components/trees/TreeListItem.vue'
 
 const { orgId, orchardId } = defineProps(['orgId', 'orchardId'])
 
@@ -31,22 +31,16 @@ const trees = computed(() => {
         <div v-else>
             <h2>Orchard: {{ orchardId }}</h2>
             <ul>
-                <li v-for="tree in trees" :key="tree.id">
-                    <router-link v-if="tree.slug && tree.id" :to="{
-                        name: 'tree-view',
-                        params: { orgId: orgId, orchardId: orchardId, treeId: tree.id, treeSlug: tree.slug }
-                    }">
-                        {{ tree.name }} - {{ tree.remaining }}
-                        <br>
-                        {{ tree.wateredUntil }}
-                        Majitel: nikto<br>
-                        Odroda: Nijaka
-                    </router-link>
-                    <span v-else>
-                        {{ tree.name }} - {{ tree.remaining }}
-                    </span>
-                </li>
+                <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree" :orgId="orgId" :orchardId="orchardId">
+                </tree-list-item>
             </ul>
         </div>
     </main>
 </template>
+
+<style scoped>
+ul {
+    padding: unset;
+    list-style: none;
+}
+</style>

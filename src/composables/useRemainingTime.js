@@ -43,8 +43,8 @@ function formatDays(count) {
         word = 'dňami'
     } else if (lastDigit === 1) {
         word = count < 0 ? 'dňom' : 'deň'
-    } else if (lastDigit >= 2 && lastDigit <= 4) {
-        word = count < 0 ? 'dňami' : 'dni'
+    } else if (lastDigit >= 2 && lastDigit <= 5) {
+        word = count < 0 ? 'dňami' : 'dní'
     } else {
         word = 'dňami'
     }
@@ -52,5 +52,5 @@ function formatDays(count) {
         ? `Vyschol pred ${abs} ${word}`
         : `Uschne za ${abs} ${word}`
 
-    return { text, days: abs }
+    return { text, days: count }
 }

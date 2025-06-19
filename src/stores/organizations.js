@@ -89,12 +89,14 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
             treesForOrchardCache.set(orchardId, {
                 data: treesSnap.docs.map(doc => {
-                    const { name, slug, wateredUntil } = doc.data()
+                    const { name, slug, wateredUntil = null, owner = null, variety = null } = doc.data()
                     return {
                         id: doc.id,
                         name,
                         slug,
-                        wateredUntil
+                        wateredUntil,
+                        owner,
+                        variety
                     }
                 }),
                 fetchedAt: now
