@@ -112,15 +112,18 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
     const treesDetailCache = reactive(new Map())
 
-    function getTree(id) {
-        return treesDetailCache.get(id) || []
+    function getTreeData(id) {
+        return computed(() => treesDetailCache.get(id)?.data || null)
+    }
+    function getTreeMeta(id) {
+        return treesDetailCache.get(id)
     }
 
     async function fetchTree(orgId, orchardId, treeId) {
         const now = Date.now()
 
-        const treeDetail = getTree(treeId)
-        if (treeDetail && (now - treeDetail.fetchedAt) < CACHE_TTL) {
+        const cached = getTreeMeta(treeId)
+        if (cached && (now - cached.fetchedAt) < CACHE_TTL) {
             console.log('[♻️] cached Tree')
             return
         }
@@ -166,7 +169,8 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         getTreesForOrchard,
 
         fetchTree,
-        getTree,
+        getTreeData,
+        getTreeMeta,
 
         // ONLY FOR TESTING
         orgCache,

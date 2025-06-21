@@ -6,7 +6,7 @@ import { useRemainingTime } from '@/composables/useRemainingTime';
 
 const orgStore = useOrganizationsStore()
 const { loading, error } = storeToRefs(orgStore)
-const { getTree } = orgStore
+const { getTreeData } = orgStore
 
 const { orgId, orchardId, treeId, treeSlug } = defineProps(['orgId', 'orchardId', 'treeId', 'treeSlug'])
 
@@ -14,9 +14,10 @@ onMounted(async () => {
     await orgStore.fetchTree(orgId, orchardId, treeId)
 })
 
-const tree = computed(() => getTree(treeId))
+const tree = getTreeData(treeId)
+
 const { remainingText } = useRemainingTime(
-    computed(() => tree.value?.data?.wateredUntil ?? null)
+    computed(() => tree.value?.wateredUntil ?? null)
 )
 </script>
 
@@ -24,15 +25,15 @@ const { remainingText } = useRemainingTime(
     <main>
         <div v-if="loading">Načítavam strom…</div>
         <div v-else-if="error">Chyba: {{ error }}</div>
-        <div v-else-if="tree.data">
+        <div v-else-if="tree">
             <small>TreeId: {{ treeId }}</small>
-            <h1>{{ tree.data.name }}</h1>
-            <template v-if="tree.data.owner">
-                <span>Majiteľ: {{ tree.data.owner }}</span>
+            <h1>{{ tree.name }}</h1>
+            <template v-if="tree.owner">
+                <span>Majiteľ: {{ tree.owner }}</span>
                 <br>
             </template>
-            <template v-if="tree.data.variety">
-                <span>Odroda: {{ tree.data.variety }}</span>
+            <template v-if="tree.variety">
+                <span>Odroda: {{ tree.variety }}</span>
                 <br>
             </template>
             {{ remainingText }}
