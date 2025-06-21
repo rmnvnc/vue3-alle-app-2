@@ -49,7 +49,7 @@ function formatDays(count) {
         word = 'dňami'
     }
     const text = count < 0
-        ? `Vyschol pred ${abs} ${word}`
+        ? `Uschol pred ${abs} ${word}`
         : `Uschne za ${abs} ${word}`
 
     return { text, days: count }

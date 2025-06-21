@@ -67,7 +67,7 @@ function tryClose() {
     margin: auto;
     overflow: hidden;
     background-color: var(--color-background-soft);
-    max-width: 700px;
+    max-width: 500px;
 }
 
 @media (min-width: 1250px) {
