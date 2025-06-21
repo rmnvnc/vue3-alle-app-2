@@ -39,7 +39,9 @@ const { remainingText, remainingDays } = useRemainingTime(
 
 const waterStatus = computed(() => {
     let status = ''
-    if (remainingDays.value > 12) {
+    if (!remainingDays.value) {
+        status = '';
+    } else if (remainingDays.value > 12) {
         status = 'green';
     } else if (remainingDays.value > 7) {
         status = 'lightGreen'

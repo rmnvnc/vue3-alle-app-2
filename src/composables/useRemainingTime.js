@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase/firestore'
 export function useRemainingTime(wateredUntil) {
     const remaining = computed(() => {
         const raw = unref(wateredUntil)
-        if (!raw) return ''
+        if (!raw) return { text: 'Ešte nezaliaty', days: null }
 
         // ak je to Firestore Timestamp, premeň ho na Date
         let targetDate
