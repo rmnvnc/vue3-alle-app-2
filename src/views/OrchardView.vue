@@ -71,7 +71,6 @@ async function saveData(data) {
         handleTreeForm()
         formSuccess.value = true
     } catch (error) {
-        console.log(error)
         formError.value = error.message || 'Nastala neočakávaná chyba.'
     } finally {
         formLoading.value = false
