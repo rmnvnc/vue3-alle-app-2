@@ -115,8 +115,6 @@ function tryClose() {
     background-color: var(--vt-c-text-dark-1);
 }
 
-
-
 .close:before {
     transform: rotate(45deg);
 }
@@ -124,9 +122,6 @@ function tryClose() {
 .close:after {
     transform: rotate(-45deg);
 }
-
-
-
 
 menu {
     margin: 0;

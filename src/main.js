@@ -10,6 +10,7 @@ import BaseButton from './components/ui/BaseButton.vue'
 const BaseDialog = defineAsyncComponent(() => import('@/components/ui/BaseDialog.vue'))
 const BaseSpinner = defineAsyncComponent(() => import('@/components/ui/BaseSpinner.vue'))
 const BaseNotification = defineAsyncComponent(() => import('@/components/ui/BaseNotification.vue'))
+const BaseToast = defineAsyncComponent(() => import('@/components/ui/BaseToast.vue'))
 
 const app = createApp(App)
 
@@ -20,5 +21,6 @@ app.component('base-button', BaseButton)
 app.component('base-dialog', BaseDialog)
 app.component('base-spinner', BaseSpinner)
 app.component('base-notification', BaseNotification)
+app.component('base-toast', BaseToast)
 
 app.mount('#app')
