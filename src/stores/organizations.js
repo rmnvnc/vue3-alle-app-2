@@ -77,8 +77,6 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
 
         console.log('[📨] fetchTrees running')
-        loading.value = true
-        error.value = null
 
         try {
             if (!orgId || !orchardId) {
@@ -90,23 +88,22 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
             treesForOrchardCache.set(orchardId, {
                 data: treesSnap.docs.map(doc => {
-                    const { name, slug, wateredUntil = null, owner = null, variety = null } = doc.data()
+                    const { name, slug, wateredUntil = null, owner = null, variety = null, createdAt = null } = doc.data()
                     return {
                         id: doc.id,
                         name,
                         slug,
                         wateredUntil,
                         owner,
-                        variety
+                        variety,
+                        createdAt
                     }
                 }),
                 fetchedAt: now
             })
 
-        } catch (e) {
-            error.value = e.message
-        } finally {
-            loading.value = false
+        } catch (error) {
+            throw error
         }
     }
 
@@ -130,9 +127,6 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
 
         console.log('[📨] fetchTree running')
-        loading.value = true
-        error.value = null
-
         try {
             if (!orgId || !orchardId || !treeId) {
                 throw new Error('Organization ID or Orchard ID or Tree ID missing')
@@ -144,42 +138,53 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
             if (!snap.exists()) throw new Error('Tree not found')
 
-            treesDetailCache.set(snap.id,
-                {
-                    data: { ...snap.data() },
-                    fetchedAt: now
-                }
-            )
-        } catch (e) {
-            error.value = e.message
-        } finally {
-            loading.value = false
+            treesDetailCache.set(snap.id, {
+                data: { ...snap.data() },
+                fetchedAt: now
+            })
+        } catch (error) {
+            throw error
         }
-
     }
 
     async function addTree(orgId, orchardId, data) {
+        const treeSlug = generateSlug(data.treeName)
+        const treeId = generateRandomId()
+
+        const newTree = {
+            id: treeId,
+            slug: treeSlug,
+            name: data.treeName,
+            type: 'tree',
+            variety: data.treeVariety || null,
+            owner: data.treeOwner || null,
+            wateredUntil: null,
+            createdAt: new Date(), //Local time for optimistic update
+            createdBy: 'user'
+        }
+
+        // Optimistic update
+        const prev = treesForOrchardCache.get(orchardId)
+        const oldList = prev?.data || []
+        treesForOrchardCache.set(orchardId, {
+            data: [...oldList, newTree]
+        })
+
         try {
-            const treeSlug = generateSlug(data.treeName)
-            const treeId = generateRandomId()
-
-            const treeData = {
-                slug: treeSlug,
-                name: data.treeName,
-                type: 'tree',
-                ...(data.treeVariety ? { variety: data.treeVariety } : {}),
-                ...(data.treeOwner ? { owner: data.treeOwner } : {}),
-                createdAt: serverTimestamp()
-            }
-
+            // Send to server
             const treeRef = doc(
                 db,
                 'organizations', orgId,
                 'orchards', orchardId,
                 'trees', treeId
             )
-            await setDoc(treeRef, treeData)
+            await setDoc(treeRef, {
+                ...newTree,
+                createdAt: serverTimestamp()
+            })
         } catch (error) {
+            // Rollback on error: restore the original state
+            treesForOrchardCache.set(orchardId, { data: oldList })
             throw error
         }
     }

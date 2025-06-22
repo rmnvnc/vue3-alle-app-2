@@ -57,7 +57,6 @@ onMounted(() => {
     /* rounded-md */
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     color: #fff;
-    font-weight: 500;
     z-index: 1000;
 }
 

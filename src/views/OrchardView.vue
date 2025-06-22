@@ -1,27 +1,54 @@
 <script setup>
 import { onMounted, computed, ref } from 'vue'
 import { useOrganizationsStore } from '@/stores/organizations'
-import { storeToRefs } from 'pinia'
 import TreeListItem from '@/components/trees/TreeListItem.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
 
 const { orgId, orchardId } = defineProps(['orgId', 'orchardId'])
 
 const orgStore = useOrganizationsStore()
-const { loading, error } = storeToRefs(orgStore)
 const { getTreesForOrchard } = orgStore
 const { addTree } = orgStore
 
+const loading = ref(false)
+const error = ref('')
+
 onMounted(async () => {
-    await orgStore.fetchTrees(orgId, orchardId)
+    loading.value = true;
+    error.value = ''
+    try {
+        await orgStore.fetchTrees(orgId, orchardId)
+    } catch (e) {
+        error.value = e.message
+    } finally {
+        loading.value = false
+    }
 })
 
 const trees = computed(() => {
-    const list = getTreesForOrchard(orchardId)
+    return getTreesForOrchard(orchardId)
+        .slice()
+        .sort((a, b) => {
+            const aHasWater = a.wateredUntil != null
+            const bHasWater = b.wateredUntil != null
 
-    return [...list].sort((a, b) => {
-        return a.wateredUntil - b.wateredUntil
-    })
+            if (!aHasWater && !bHasWater) {
+                const aMs = a.createdAt instanceof Date
+                    ? a.createdAt.getTime()
+                    : a.createdAt?.toMillis?.() ?? 0
+
+                const bMs = b.createdAt instanceof Date
+                    ? b.createdAt.getTime()
+                    : b.createdAt?.toMillis?.() ?? 0
+
+                return bMs - aMs
+            }
+
+            if (!aHasWater) return -1
+            if (!bHasWater) return 1
+
+            return a.wateredUntil - b.wateredUntil
+        })
 })
 
 const showTreeForm = ref(false);
@@ -62,7 +89,7 @@ async function saveData(data) {
         <base-spinner v-if="loading"></base-spinner>
         <div v-else-if="error">Error: {{ error }}</div>
         <div v-else>
-            <h2>Orchard: {{ orchardId }}</h2>
+            <h1>Orchard: {{ orchardId }}</h1>
             <base-button @click="handleTreeForm">Pridať strom</base-button>
             <ul>
                 <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree" :orgId="orgId" :orchardId="orchardId">
@@ -76,5 +103,10 @@ async function saveData(data) {
 ul {
     padding: unset;
     list-style: none;
+    margin-top: 2rem;
+}
+
+h1 {
+    margin-bottom: 1rem;
 }
 </style>
