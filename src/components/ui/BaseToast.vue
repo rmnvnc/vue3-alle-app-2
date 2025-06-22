@@ -52,9 +52,7 @@ onMounted(() => {
     position: fixed;
     top: 1rem;
     right: 1rem;
-    padding: 0.75rem 1rem;
-    border-radius: 0.375rem;
-    /* rounded-md */
+    padding: .5rem .75rem;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     color: #fff;
     z-index: 1000;

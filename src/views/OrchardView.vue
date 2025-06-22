@@ -91,10 +91,10 @@ async function saveData(data) {
         <div v-else>
             <h1>Orchard: {{ orchardId }}</h1>
             <base-button @click="handleTreeForm">Pridať strom</base-button>
-            <ul>
+            <transition-group name="tree" tag="ul">
                 <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree" :orgId="orgId" :orchardId="orchardId">
                 </tree-list-item>
-            </ul>
+            </transition-group>
         </div>
     </main>
 </template>
@@ -108,5 +108,16 @@ ul {
 
 h1 {
     margin-bottom: 1rem;
+}
+
+.tree-enter-from,
+.tree-leave-to {
+    opacity: 0;
+    transform: translateX(-10px);
+}
+
+.tree-enter-active,
+.tree-leave-active {
+    transition: all .5s ease;
 }
 </style>
