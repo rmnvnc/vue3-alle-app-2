@@ -33,6 +33,10 @@
   --color-heading: var(--vt-c-text-light-1);
   --color-text: var(--vt-c-text-light-1);
 
+  --color-info: #326aad;
+  --color-error: #df5550;
+  --color-success: #458c12;
+
   --section-gap: 160px;
 }
 @media (prefers-color-scheme: dark) {

@@ -1,16 +1,27 @@
 <template>
     <form @submit.prevent="submitForm">
+        <base-notification v-if="!formLoading && formError" :type="{ 'error': formError }">
+            {{ formError }}
+        </base-notification>
         <div v-for="(field, key) in formSetup" :key="key" class="form-control" :class="{ invalid: !field.isValid }">
             <label :for="`field-${key}`"> {{ field.label }}</label>
             <p v-if="!field.isValid" class="invalid-message">{{ field.label }} je povinné pole</p>
-            <input type="text" :id="`field-${key}`" v-model.trim="field.val" @blur="validateField(key)">
+            <input type="text" :id="`field-${key}`" v-model.trim="field.val" @blur="validateField(key)"
+                :disabled="formLoading">
         </div>
-        <base-button type="submit">Odoslať</base-button>
+        <base-button type="submit" :disabled="formLoading">
+            {{ formLoading ? 'Odosielam...' : 'Odoslať' }}
+        </base-button>
     </form>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+
+const props = defineProps({
+    formLoading: Boolean,
+    formError: String
+})
 
 const emit = defineEmits(['save-data'])
 

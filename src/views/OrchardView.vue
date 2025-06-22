@@ -27,11 +27,32 @@ const trees = computed(() => {
 const showTreeForm = ref(false);
 
 function handleTreeForm() {
-    showTreeForm.value = !showTreeForm.value;
+    showTreeForm.value = !showTreeForm.value
+    formError.value = ''
 }
 
-function saveData(data) {
-    addTree(orgId, orchardId, data)
+const formLoading = ref(false)
+const formSuccess = ref(false)
+const formError = ref('')
+
+
+async function saveData(data) {
+    formLoading.value = true
+    formSuccess.value = false
+    formError.value = ''
+    try {
+        await addTree(orgId, orchardId, data)
+        handleTreeForm()
+
+        //This will go to Toast
+        formSuccess.value = true
+        setTimeout(() => formSuccess.value = false, 3000)
+    } catch (error) {
+        console.log(error)
+        formError.value = error.message || 'Nastala neočakávaná chyba.'
+    } finally {
+        formLoading.value = false
+    }
 }
 
 </script>
@@ -39,12 +60,13 @@ function saveData(data) {
 <template>
     <main>
         <base-dialog title="Pridať strom" :show="showTreeForm" @close="handleTreeForm">
-            <tree-form @save-data="saveData" />
+            <tree-form @save-data="saveData" :form-loading="formLoading" :form-error="formError" />
         </base-dialog>
-        <div v-if="loading">Loading…</div>
+        <base-spinner v-if="loading"></base-spinner>
         <div v-else-if="error">Error: {{ error }}</div>
         <div v-else>
             <h2>Orchard: {{ orchardId }}</h2>
+            <base-notification v-if="formSuccess" type="success">Uspesne som pridal stormček</base-notification>
             <base-button @click="handleTreeForm">Pridať strom</base-button>
             <ul>
                 <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree" :orgId="orgId" :orchardId="orchardId">

@@ -35,8 +35,8 @@ a {
     padding: 8px 16px;
 }
 
-button:hover,
-a:hover {
+button:hover:not(:disabled),
+a:hover:not(:disabled) {
     border-color: var(--color-border-hover);
     background-color: var(--color-background-mute);
     cursor: pointer;
