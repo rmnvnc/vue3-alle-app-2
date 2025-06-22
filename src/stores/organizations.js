@@ -185,6 +185,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         } catch (error) {
             // Rollback on error: restore the original state
             treesForOrchardCache.set(orchardId, { data: oldList })
+            console.error('Pridanie stromu zlyhalo:', error);
             throw error
         }
     }

@@ -1,7 +1,7 @@
 <template>
     <teleport to="body">
         <transition name="toast">
-            <div v-if="visible" :class="['toast', `toast--${type}`]">
+            <div v-if="show" :class="['toast', `toast--${type}`]">
                 <slot>{{ message }}</slot>
             </div>
         </transition>
@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { watch } from 'vue'
 
 const props = defineProps({
     message: {
@@ -23,15 +23,22 @@ const props = defineProps({
     duration: {
         type: Number,
         default: 5000
-    }
+    },
+    show: {
+        type: Boolean,
+        required: true
+    },
 })
 
-const visible = ref(true)
+const emit = defineEmits(['close'])
 
-onMounted(() => {
-    setTimeout(() => {
-        visible.value = false
-    }, props.duration)
+
+watch(() => props.show, (val) => {
+    if (val) {
+        setTimeout(() => {
+            emit('close')
+        }, props.duration)
+    }
 })
 </script>
 

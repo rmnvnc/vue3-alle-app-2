@@ -59,19 +59,18 @@ function handleTreeForm() {
 }
 
 const formLoading = ref(false)
-const formSuccess = ref(false)
+const showToast = ref(false)
 const formError = ref('')
 
 async function saveData(data) {
     formLoading.value = true
-    formSuccess.value = false
+    showToast.value = false
     formError.value = ''
     try {
         await addTree(orgId, orchardId, data)
         handleTreeForm()
-        formSuccess.value = true
+        showToast.value = true
     } catch (error) {
-        console.log(error)
         formError.value = error.message || 'Nastala neočakávaná chyba.'
     } finally {
         formLoading.value = false
@@ -82,7 +81,7 @@ async function saveData(data) {
 
 <template>
     <main>
-        <base-toast v-if="formSuccess" message="Strom úspešne pridaný" type="success" />
+        <base-toast :show="showToast" @close="showToast = false" message="Strom úspešne pridaný" type="success" />
         <base-dialog title="Pridať strom" :show="showTreeForm" @close="handleTreeForm">
             <tree-form @save-data="saveData" :form-loading="formLoading" :form-error="formError" />
         </base-dialog>
