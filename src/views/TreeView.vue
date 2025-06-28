@@ -4,7 +4,7 @@ import { useOrganizationsStore } from '@/stores/organizations';
 import { useRemainingTime } from '@/composables/useRemainingTime';
 
 const orgStore = useOrganizationsStore()
-const { getTreeData } = orgStore
+const { getTreeData, waterTree } = orgStore
 
 const { orgId, orchardId, treeId, treeSlug } = defineProps(['orgId', 'orchardId', 'treeId', 'treeSlug'])
 
@@ -27,10 +27,32 @@ const tree = getTreeData(treeId)
 const { remainingText } = useRemainingTime(
     computed(() => tree.value?.wateredUntil ?? null)
 )
+
+const showToast = ref(false)
+const buttonCooldown = ref(false)
+const waterringError = ref(false)
+
+async function wTree() {
+    showToast.value = false
+    buttonCooldown.value = true
+    try {
+        await waterTree(orgId, orchardId, treeId, tree.wateredUntil)
+
+        showToast.value = true
+        setTimeout(() => {
+            buttonCooldown.value = false
+        }, 10000)
+    } catch (e) {
+        waterringError.value = true
+    }
+}
 </script>
 
 <template>
     <main>
+        <base-toast :show="waterringError" @close="waterringError = false" message="Nastala chyba pri zalievaní"
+            type="error" />
+        <base-toast :show="showToast" @close="showToast = false" message="Strom úspešne zaliaty" type="success" />
         <base-spinner v-if="loading">Načítavam strom…</base-spinner>
         <div v-else-if="error">Chyba: {{ error }}</div>
         <div v-else-if="tree">
@@ -45,6 +67,15 @@ const { remainingText } = useRemainingTime(
                 <br>
             </template>
             {{ remainingText }}
+            <base-button @click="wTree()" :disabled="buttonCooldown || waterringError" class="add-tree">Zaliať
+                strom</base-button>
         </div>
     </main>
 </template>
+
+<style scoped>
+.add-tree,
+h1 {
+    margin-block: 16px;
+}
+</style>

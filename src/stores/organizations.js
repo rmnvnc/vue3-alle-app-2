@@ -1,6 +1,6 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { generateSlug, generateRandomId } from '@/utils/id.js'
 
@@ -85,6 +85,10 @@ export const useOrganizationsStore = defineStore('organizations', () => {
             const treesSnap = await getDocs(
                 collection(db, 'organizations', orgId, 'orchards', orchardId, 'trees')
             );
+
+            if (treesSnap.empty) {
+                throw new Error(`Sad "${orchardId}" v organizácii "${orgId}" neexistuje`)
+            }
 
             treesForOrchardCache.set(orchardId, {
                 data: treesSnap.docs.map(doc => {
@@ -190,6 +194,59 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
+    async function waterTree(orgId, orchardId, treeId) {
+        const meta = treesDetailCache.get(treeId);
+        if (!meta) throw new Error("Strom nie je v cache.");
+
+        const now = new Date();
+        const msPerDay = 24 * 60 * 60 * 1000;
+
+        let baseDate = now;
+        if (meta.data.wateredUntil?.toDate) {
+            const wDate = meta.data.wateredUntil.toDate();
+            if (wDate > now) baseDate = wDate;
+        }
+
+        const nextDate = new Date(baseDate.getTime() + 14 * msPerDay);
+        const nextTs = Timestamp.fromDate(nextDate);
+
+        await updateTreeData(orgId, orchardId, treeId, {
+            wateredUntil: nextTs
+        });
+    }
+
+    async function updateTreeData(orgId, orchardId, treeId, updateFields) {
+        const meta = treesDetailCache.get(treeId)
+
+        if (!meta) {
+            throw new Error(`Strom ${treeId} nie je v cache`);
+        }
+
+        const prevData = { ...meta.data }
+
+        const newData = { ...meta.data, ...updateFields }
+        treesDetailCache.set(treeId, {
+            data: newData
+        })
+
+        const treeRef = doc(
+            db,
+            "organizations", orgId,
+            "orchards", orchardId,
+            "trees", treeId
+        );
+
+        try {
+            await updateDoc(treeRef, updateFields)
+        } catch (error) {
+            treesDetailCache.set(treeId, {
+                data: prevData
+            });
+            console.error("Optimistic update stromu zlyhalo, rollbackujem:", err);
+            throw err;
+        }
+    }
+
     return {
         loading,
         error,
@@ -205,6 +262,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         getTreeData,
         getTreeMeta,
         addTree,
+        waterTree,
 
         // ONLY FOR TESTING
         orgCache,

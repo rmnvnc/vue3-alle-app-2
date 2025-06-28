@@ -41,4 +41,9 @@ a:hover:not(:disabled) {
     background-color: var(--color-background-mute);
     cursor: pointer;
 }
+
+button:disabled,
+a:disabled {
+    opacity: .6;
+}
 </style>
