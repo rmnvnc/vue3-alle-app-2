@@ -60,7 +60,7 @@ function tryClose() {
     color: var(--color-text);
     position: fixed;
     top: 20vh;
-    width: 90%;
+    width: calc(100vw - 2rem);
     z-index: 100;
     border: none;
     padding: 0;
@@ -68,12 +68,6 @@ function tryClose() {
     overflow: hidden;
     background-color: var(--color-background-soft);
     max-width: 500px;
-}
-
-@media (min-width: 1250px) {
-    .dialog {
-        width: 100%;
-    }
 }
 
 .dialog__header {

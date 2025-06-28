@@ -53,8 +53,10 @@ console.log(route.fullPath)
 <style scoped>
 .breadcrumbs ul {
     display: flex;
+    flex-wrap: wrap;
     list-style-type: none;
     padding-left: unset;
+    margin: .5rem 0 1rem;
 }
 
 .breadcrumbs li:not(:last-child)::after {
