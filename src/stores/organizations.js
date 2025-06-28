@@ -67,6 +67,24 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         return treesForOrchardCache.get(id)?.data || []
     }
 
+    function updateTreeInOrchard(orchardId, treeId, updatedFields) {
+        const orchardCache = treesForOrchardCache.get(orchardId)
+        if (!orchardCache) {
+            return
+        }
+
+        const newData = orchardCache.data.map(tree =>
+            tree.id === treeId
+                ? { ...tree, ...updatedFields }
+                : tree
+        )
+
+        treesForOrchardCache.set(orchardId, {
+            data: newData,
+            fetchedAt: orchardCache.fetchedAt
+        })
+    }
+
     async function fetchTrees(orgId, orchardId) {
         const now = Date.now()
         const orchard = treesForOrchardCache.get(orchardId)
@@ -194,16 +212,13 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
-    async function waterTree(orgId, orchardId, treeId) {
-        const meta = treesDetailCache.get(treeId);
-        if (!meta) throw new Error("Strom nie je v cache.");
-
+    async function waterTree(orgId, orchardId, treeId, wateredUntil) {
         const now = new Date();
         const msPerDay = 24 * 60 * 60 * 1000;
 
         let baseDate = now;
-        if (meta.data.wateredUntil?.toDate) {
-            const wDate = meta.data.wateredUntil.toDate();
+        if (wateredUntil?.toDate) {
+            const wDate = wateredUntil.toDate();
             if (wDate > now) baseDate = wDate;
         }
 
@@ -216,15 +231,16 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     }
 
     async function updateTreeData(orgId, orchardId, treeId, updateFields) {
-        const meta = treesDetailCache.get(treeId)
+        // Find tree in tree detail cache
+        const metaDetail = treesDetailCache.get(treeId)
 
-        if (!meta) {
+        if (!metaDetail) {
             throw new Error(`Strom ${treeId} nie je v cache`);
         }
 
-        const prevData = { ...meta.data }
+        const prevData = { ...metaDetail.data }
 
-        const newData = { ...meta.data, ...updateFields }
+        const newData = { ...metaDetail.data, ...updateFields }
         treesDetailCache.set(treeId, {
             data: newData
         })
@@ -238,6 +254,10 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
         try {
             await updateDoc(treeRef, updateFields)
+
+            // If the data is successfully saved, I will also update it in the local cache for orchardCache
+            updateTreeInOrchard(orchardId, treeId, updateFields)
+
         } catch (error) {
             treesDetailCache.set(treeId, {
                 data: prevData

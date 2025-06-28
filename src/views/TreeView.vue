@@ -36,7 +36,7 @@ async function wTree() {
     showToast.value = false
     buttonCooldown.value = true
     try {
-        await waterTree(orgId, orchardId, treeId, tree.wateredUntil)
+        await waterTree(orgId, orchardId, treeId, tree.value.wateredUntil)
 
         showToast.value = true
         setTimeout(() => {
