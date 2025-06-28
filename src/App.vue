@@ -1,10 +1,12 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import TheHeader from '@/components/layout/TheHeader.vue'
+import BaseBreadcrumbs from '@/components/ui/BaseBreadcrumbs.vue'
 </script>
 
 <template>
     <the-header></the-header>
+    <BaseBreadcrumbs />
     <router-view v-slot="slotProps">
         <transition name="route" mode="out-in">
             <component :is="slotProps.Component"></component>
