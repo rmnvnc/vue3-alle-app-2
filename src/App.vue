@@ -1,7 +1,22 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView, useRouter, useRoute } from 'vue-router'
 import TheHeader from '@/components/layout/TheHeader.vue'
 import BaseBreadcrumbs from '@/components/ui/BaseBreadcrumbs.vue'
+import { useAuthStore } from '@/stores/auth'
+import { watch } from 'vue'
+
+const auth = useAuthStore()
+const router = useRouter()
+const route = useRoute()
+
+watch(
+    () => auth.isLoggedIn,
+    (loggedIn) => {
+        if (auth.isReady && !loggedIn && route.meta.requiresAuth) {
+            router.push({name: 'login', query: {redirect: route.fullPath}})
+        }
+    }
+)
 </script>
 
 <template>

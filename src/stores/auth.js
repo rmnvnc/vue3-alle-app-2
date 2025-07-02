@@ -5,19 +5,20 @@ import { computed, ref } from "vue";
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(null)
-    const isLoading = ref(true)
+    // const isLoading = ref(true)
+    const isReady = ref(false)
     const error = ref(null)
     const isLoggedIn = computed(() => !!user.value)
 
     async function login(email, password) {
-        isLoading.value = true
+        // isLoading.value = true
         error.value = null
         try {
             await signInWithEmailAndPassword(auth, email, password)
         } catch (e) {
             error.value = e.message
         } finally {
-            isLoading.value = false
+            // isLoading.value = false
         }
     }
 
@@ -29,13 +30,15 @@ export const useAuthStore = defineStore('auth', () => {
     function initAuth() {
         onAuthStateChanged(auth, firebaseUser => {
             user.value = firebaseUser
-            isLoading.value = false
+            isReady.value = true
+            // isLoading.value = false
         })
     }
 
     return {
         user,
-        isLoading,
+        // isLoading,
+        isReady,
         isLoggedIn,
         error,
         login,

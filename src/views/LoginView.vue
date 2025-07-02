@@ -17,6 +17,7 @@
 <script setup>
 import { reactive, ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useRoute, useRouter } from 'vue-router'
 
 const auth = useAuthStore()
 
@@ -52,16 +53,28 @@ function validateField(key) {
 }
 
 const formLoading = ref(false)
+const route = useRoute()
+const router = useRouter()
+
+const redirectPath = route.query.redirect || '/'
 
 const loginForm = async () => {
-
+    formLoading.value = true
     Object.keys(formSetup).forEach(validateField)
 
     if (!isFormValid.value) {
         return
     }
 
-    await auth.login(formSetup.email.val, formSetup.password.val)
+    try {
+        await auth.login(formSetup.email.val, formSetup.password.val)
+        router.push(redirectPath)
+    } catch(e) {
+        console.log(e)
+    } finally {
+        formLoading.value = false
+    }
+
 }
 
 </script>
