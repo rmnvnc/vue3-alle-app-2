@@ -1,14 +1,36 @@
+<template>
+    <main>
+        <base-toast :show="showToast" @close="showToast = false" message="Strom úspešne pridaný" type="success" />
+        <base-dialog title="Pridať strom" :show="showTreeForm" @close="handleTreeForm">
+            <tree-form @save-data="saveData" :form-loading="formLoading" :form-error="formError" />
+        </base-dialog>
+        <base-spinner v-if="loading"></base-spinner>
+        <div v-else-if="error">Error: {{ error }}</div>
+        <div v-else>
+            <h1>Orchard: {{ orchardId }}</h1>
+            <base-button @click="handleTreeForm" :disabled="!auth.canEdit">Pridať strom</base-button>
+            <transition-group name="tree" tag="ul">
+                <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree" :orgId="orgId" :orchardId="orchardId">
+                </tree-list-item>
+            </transition-group>
+        </div>
+    </main>
+</template>
+
 <script setup>
 import { onMounted, computed, ref } from 'vue'
 import { useOrganizationsStore } from '@/stores/organizations'
 import TreeListItem from '@/components/trees/TreeListItem.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const { orgId, orchardId } = defineProps(['orgId', 'orchardId'])
 
 const orgStore = useOrganizationsStore()
 const { getTreesForOrchard } = orgStore
 const { addTree } = orgStore
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const error = ref('')
@@ -78,25 +100,6 @@ async function saveData(data) {
 }
 
 </script>
-
-<template>
-    <main>
-        <base-toast :show="showToast" @close="showToast = false" message="Strom úspešne pridaný" type="success" />
-        <base-dialog title="Pridať strom" :show="showTreeForm" @close="handleTreeForm">
-            <tree-form @save-data="saveData" :form-loading="formLoading" :form-error="formError" />
-        </base-dialog>
-        <base-spinner v-if="loading"></base-spinner>
-        <div v-else-if="error">Error: {{ error }}</div>
-        <div v-else>
-            <h1>Orchard: {{ orchardId }}</h1>
-            <base-button @click="handleTreeForm">Pridať strom</base-button>
-            <transition-group name="tree" tag="ul">
-                <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree" :orgId="orgId" :orchardId="orchardId">
-                </tree-list-item>
-            </transition-group>
-        </div>
-    </main>
-</template>
 
 <style scoped>
 ul {

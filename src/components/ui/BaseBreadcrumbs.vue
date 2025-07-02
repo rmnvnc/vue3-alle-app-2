@@ -40,14 +40,8 @@ const crumbs = computed(() => {
         list.push({ label, to })
     });
 
-
-
     return list
 })
-console.log("tsfa")
-
-console.log(route.fullPath)
-
 </script>
 
 <style scoped>
