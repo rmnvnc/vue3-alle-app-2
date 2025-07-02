@@ -20,7 +20,7 @@ const route = useRoute()
 const router = useRouter()
 
 const crumbs = computed(() => {
-    const parts = route.fullPath.split('/').filter(Boolean)
+    const parts = route.path.split('/').filter(Boolean)
 
     const list = [{ label: 'Domov', to: '/' }]
 

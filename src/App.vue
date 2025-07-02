@@ -13,7 +13,7 @@ watch(
     () => auth.isLoggedIn,
     (loggedIn) => {
         if (auth.isReady && !loggedIn && route.meta.requiresAuth) {
-            router.push({name: 'login', query: {redirect: route.fullPath}})
+            router.push({ name: 'login', query: { redirect: route.fullPath } })
         }
     }
 )
@@ -21,7 +21,7 @@ watch(
 
 <template>
     <the-header></the-header>
-    <BaseBreadcrumbs />
+    <BaseBreadcrumbs v-if="auth.isReady && route.name !== 'login'" />
     <router-view v-slot="slotProps">
         <transition name="route" mode="out-in">
             <component :is="slotProps.Component"></component>
