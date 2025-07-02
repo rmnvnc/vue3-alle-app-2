@@ -7,10 +7,10 @@
         <base-spinner v-if="loading"></base-spinner>
         <div v-else-if="error">Error: {{ error }}</div>
         <div v-else>
-            <h1>Orchard: {{ orchardId }}</h1>
+            <h1>Orchard: {{ _orchardId }}</h1>
             <base-button @click="handleTreeForm" :disabled="!auth.canEdit">Pridať strom</base-button>
             <transition-group name="tree" tag="ul">
-                <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree" :orgId="orgId" :orchardId="orchardId">
+                <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree">
                 </tree-list-item>
             </transition-group>
         </div>
@@ -24,11 +24,8 @@ import TreeListItem from '@/components/trees/TreeListItem.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
 import { useAuthStore } from '@/stores/auth'
 
-const { orgId, orchardId } = defineProps(['orgId', 'orchardId'])
-
 const orgStore = useOrganizationsStore()
-const { getTreesForOrchard } = orgStore
-const { addTree } = orgStore
+const { getTreesForOrchard, addTree, _orgId, _orchardId } = orgStore
 
 const auth = useAuthStore()
 
@@ -39,7 +36,7 @@ onMounted(async () => {
     loading.value = true;
     error.value = ''
     try {
-        await orgStore.fetchTrees(orgId, orchardId)
+        await orgStore.fetchTrees(_orgId, _orchardId)
     } catch (e) {
         error.value = e.message
     } finally {
@@ -48,7 +45,7 @@ onMounted(async () => {
 })
 
 const trees = computed(() => {
-    return getTreesForOrchard(orchardId)
+    return getTreesForOrchard(_orchardId)
         .slice()
         .sort((a, b) => {
             const aHasWater = a.wateredUntil != null
@@ -89,7 +86,7 @@ async function saveData(data) {
     showToast.value = false
     formError.value = ''
     try {
-        await addTree(orgId, orchardId, data)
+        await addTree(_orgId, _orchardId, data)
         handleTreeForm()
         showToast.value = true
     } catch (error) {

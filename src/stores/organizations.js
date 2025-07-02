@@ -6,6 +6,11 @@ import { generateSlug, generateRandomId } from '@/utils/id.js'
 
 
 export const useOrganizationsStore = defineStore('organizations', () => {
+    //HARDCODED
+    const _orchardId = 'sad'
+    const _orgId = 'Drahovce'
+
+
     const loading = ref(false)
     const error = ref(null)
     const CACHE_TTL = 5 * 60 * 1000
@@ -224,10 +229,13 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
         const nextDate = new Date(baseDate.getTime() + 14 * msPerDay);
         const nextTs = Timestamp.fromDate(nextDate);
-
-        await updateTreeData(orgId, orchardId, treeId, {
-            wateredUntil: nextTs
-        });
+        try {
+            await updateTreeData(orgId, orchardId, treeId, {
+                wateredUntil: nextTs
+            });
+        } catch (error) {
+            throw error
+        }
     }
 
     async function updateTreeData(orgId, orchardId, treeId, updateFields) {
@@ -262,18 +270,19 @@ export const useOrganizationsStore = defineStore('organizations', () => {
             treesDetailCache.set(treeId, {
                 data: prevData
             });
-            console.error("Optimistic update stromu zlyhalo, rollbackujem:", err);
-            throw err;
+            console.error("Optimistic update stromu zlyhalo, rollbackujem:", error);
+            throw error;
         }
     }
 
     return {
+        _orchardId,
+        _orgId,
+
         loading,
         error,
         organization,
         orchards,
-
-        fetchOrganization,
 
         fetchTrees,
         getTreesForOrchard,
@@ -283,11 +292,6 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         getTreeMeta,
         addTree,
         waterTree,
-
-        // ONLY FOR TESTING
-        orgCache,
-        treesForOrchardCache,
-        treesDetailCache
     }
 
 

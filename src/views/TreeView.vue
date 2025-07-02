@@ -31,10 +31,9 @@ import { useRemainingTime } from '@/composables/useRemainingTime';
 import { useAuthStore } from '@/stores/auth'
 
 const orgStore = useOrganizationsStore()
-const { getTreeData, waterTree } = orgStore
+const { getTreeData, waterTree, _orgId, _orchardId } = orgStore
 
-const { orgId, orchardId, treeId, treeSlug } = defineProps(['orgId', 'orchardId', 'treeId', 'treeSlug'])
-
+const { treeId, treeSlug } = defineProps(['treeId', 'treeSlug'])
 const auth = useAuthStore()
 
 const loading = ref(false)
@@ -43,7 +42,7 @@ const error = ref('')
 onMounted(async () => {
     loading.value = true
     try {
-        await orgStore.fetchTree(orgId, orchardId, treeId)
+        await orgStore.fetchTree(_orgId, _orchardId, treeId)
     } catch (e) {
         error.value = e.message
     } finally {
@@ -65,13 +64,13 @@ async function wTree() {
     showToast.value = false
     buttonCooldown.value = true
     try {
-        await waterTree(orgId, orchardId, treeId, tree.value.wateredUntil)
+        await waterTree(_orgId, _orchardId, treeId, tree.value.wateredUntil)
 
         showToast.value = true
         setTimeout(() => {
             buttonCooldown.value = false
         }, 10000)
-    } catch (e) {
+    } catch (error) {
         waterringError.value = true
     }
 }
