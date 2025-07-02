@@ -1,5 +1,8 @@
 <template>
     <form @submit.prevent="loginForm">
+        <div class="form-control" v-if="error">
+            <p class="error">{{ error }}</p>
+        </div>
         <div v-for="(field, key) in formSetup" :key="key" class="form-control" :class="{ invalid: !field.isValid }">
             <label :for="`field-${key}`"> {{ field.label }}</label>
             <p v-if="!field.isValid" class="invalid-message">{{ field.label }} je povinné pole</p>
@@ -18,6 +21,7 @@
 import { reactive, ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRoute, useRouter } from 'vue-router'
+import { FIREBASE_ERROR_MESSAGES } from '@/utils/firebaseErrors'
 
 const auth = useAuthStore()
 
@@ -57,20 +61,25 @@ const route = useRoute()
 const router = useRouter()
 
 const redirectPath = route.query.redirect || '/'
+const error = ref('')
 
 const loginForm = async () => {
-    formLoading.value = true
+
     Object.keys(formSetup).forEach(validateField)
 
     if (!isFormValid.value) {
         return
     }
 
+    formLoading.value = true
+    error.value = ''
+
     try {
         await auth.login(formSetup.email.val, formSetup.password.val)
         router.push(redirectPath)
-    } catch(e) {
-        console.log(e)
+    } catch (e) {
+        console.log(e.code)
+        error.value = FIREBASE_ERROR_MESSAGES[e.code] || 'Nastala neznáma chyba, skúste sa prihlásiť neskôr'
     } finally {
         formLoading.value = false
     }
@@ -90,7 +99,8 @@ form {
     margin-bottom: 1rem;
 }
 
-.invalid {
+.invalid,
+.error {
     color: red;
 }
 

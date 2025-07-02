@@ -5,20 +5,14 @@ import { computed, ref } from "vue";
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(null)
-    // const isLoading = ref(true)
     const isReady = ref(false)
-    const error = ref(null)
     const isLoggedIn = computed(() => !!user.value)
 
     async function login(email, password) {
-        // isLoading.value = true
-        error.value = null
         try {
             await signInWithEmailAndPassword(auth, email, password)
-        } catch (e) {
-            error.value = e.message
-        } finally {
-            // isLoading.value = false
+        } catch (error) {
+            throw error
         }
     }
 
@@ -37,10 +31,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     return {
         user,
-        // isLoading,
         isReady,
         isLoggedIn,
-        error,
         login,
         logout,
         initAuth
