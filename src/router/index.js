@@ -45,7 +45,14 @@ router.beforeEach((to, from, next) => {
             return next()
         }
         if (!auth.user) {
-            return next({ name: 'login', query: { redirect: to.fullPath }, replace: true })
+            if (to.fullPath === '/') {
+                return next({ name: 'login', replace: true });
+            }
+            return next({
+                name: 'login',
+                query: { redirect: to.fullPath },
+                replace: true
+            });
         }
         next()
     }
