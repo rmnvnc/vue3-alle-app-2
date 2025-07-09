@@ -5,7 +5,7 @@ const db = admin.firestore()
 const { FieldValue } = admin.firestore
 
 exports.dailyPrecipHistory = onSchedule(
-    { schedule: "5 1 * * *", timeZone: "Europe/Bratislava" },
+    { schedule: "0 6 * * *", timeZone: "Europe/Bratislava" },
     async (context) => {
         const now = new Date();
         const yest = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
