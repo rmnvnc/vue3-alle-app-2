@@ -2,11 +2,11 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require('firebase-admin')
 admin.initializeApp()
 const db = admin.firestore()
-const { FieldValue } = admin.firestore
+const { FieldValue, Timestamp } = admin.firestore
 
 exports.dailyPrecipHistory = onSchedule(
     { schedule: "0 6 * * *", timeZone: "Europe/Bratislava" },
-    async (context) => {
+    async () => {
         const now = new Date();
         const yest = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
         const yyyy = yest.getFullYear()
@@ -28,12 +28,54 @@ exports.dailyPrecipHistory = onSchedule(
             for (const orchDoc of orchSnap.docs) {
                 const data = orchDoc.data()
                 const station = data.shmuStation
+
                 if (!station) continue
-                const prec = dailyPrecip[station] || 0
+
+                const precMm = dailyPrecip[station] || 0
+
                 await orchDoc.ref.update({
-                    last24hPrecip: prec,
-                    dailyPrecipHistory: FieldValue.arrayUnion({ date: dateStr, precip: prec })
+                    last24hPrecip: precMm,
+                    dailyPrecipHistory: FieldValue.arrayUnion({ date: dateStr, precip: precMm })
                 })
+
+                const logTime = Timestamp.now();
+
+                const treesSnap = await orchDoc.ref.collection("trees").get();
+                const hoursToAdd = computeWateringHours(precMm);
+                const nowTs = logTime;
+
+                const batch = db.batch();
+                for (const treeDoc of treesSnap.docs) {
+                    const treeData = treeDoc.data();
+                    const existing = treeData.wateredUntil instanceof Timestamp
+                        ? treeData.wateredUntil
+                        : nowTs;
+
+                    const baseline = existing.toMillis() > nowTs.toMillis()
+                        ? existing
+                        : nowTs;
+
+                    const newUntil = Timestamp.fromMillis(
+                        baseline.toMillis() + hoursToAdd * 3600 * 1000
+                    );
+
+                    batch.update(treeDoc.ref, {
+                        wateredUntil: newUntil,
+                        logs: FieldValue.arrayUnion({
+                            type: 'watering',
+                            by: 'rain',
+                            prevWateredUntil: existing,
+                            newWateredUntil: newUntil,
+                            loggedAt: logTime
+                        })
+                    });
+                }
+                await batch.commit();
+
+                console.log(
+                    `Sad ${orgDoc.id}/${orchDoc.id}: prec=${precMm} mm → ` +
+                    `pridávam ${hoursToAdd} h pre ${treesSnap.size} stromov`
+                );
             }
         }
         console.log(`dailyPrecipHistory done for ${dateStr}`);
@@ -41,3 +83,16 @@ exports.dailyPrecipHistory = onSchedule(
     }
 
 )
+
+function computeWateringHours(precipMm) {
+    if (precipMm <= 5) return 3 * 24;
+    if (precipMm <= 10) return 6 * 24;
+    if (precipMm <= 15) return 10 * 24;
+    if (precipMm <= 20) return 13 * 24;
+    if (precipMm <= 25) return 16 * 24;
+    if (precipMm <= 30) return 20 * 24;
+    if (precipMm <= 35) return 23 * 24;
+    if (precipMm <= 40) return 26 * 24;
+
+    return 30 * 24;
+}
