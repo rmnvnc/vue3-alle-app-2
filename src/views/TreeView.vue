@@ -20,6 +20,20 @@
             <base-button @click="wTree()" :disabled="buttonCooldown || waterringError || !auth.canWater"
                 class="add-tree">Zaliať
                 strom</base-button>
+            <h2>Záznam posledných aktivít</h2>
+            <ol v-if="recentLogs.length">
+                <li v-for="log in recentLogs" :key="log.loggedAt.toMillis()">
+                    <strong>{{ log.loggedAt.toDate().toLocaleString() }}</strong><br>
+                    <template v-if="log.by === 'rain'">
+                        <strong>Dážď</strong>
+                    </template>
+                    <template v-else>
+                        <strong>{{ log.by }}</strong>
+                    </template>
+                    zalial strom do {{ log.newWateredUntil.toDate().toLocaleString() }}.
+                    <br><br>
+                </li>
+            </ol>
         </div>
     </main>
 </template>
@@ -73,6 +87,26 @@ async function wTree() {
     } catch (error) {
         waterringError.value = true
     }
+}
+
+const recentLogs = computed(() => {
+    const logs = tree.value?.logs || [];
+    return logs.slice(-5).reverse();
+});
+
+function diffInDays(date1, date2) {
+    if (!date1 || !date2) return 0
+    const msPerDay = 24 * 60 * 60 * 1000
+    const d1 = date1.toDate ? date1.toDate() : date1
+    const d2 = date2.toDate ? date2.toDate() : date2
+    const range = Math.floor((d2.getTime() - d1.getTime()) / msPerDay)
+    let verb;
+    if (range < 4) {
+        verb = 'dni'
+    } else {
+        verb = 'dní'
+    }
+    return range + ' ' + verb
 }
 </script>
 
