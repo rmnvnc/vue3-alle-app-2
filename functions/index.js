@@ -44,6 +44,13 @@ exports.dailyPrecipHistory = onSchedule(
                 const hoursToAdd = computeWateringHours(precMm);
                 const nowTs = logTime;
 
+                if (hoursToAdd === 0) {
+                    console.log(
+                        `V Sade nepršalo`
+                    );
+                    return
+                }
+
                 const batch = db.batch();
                 for (const treeDoc of treesSnap.docs) {
                     const treeData = treeDoc.data();
@@ -66,6 +73,7 @@ exports.dailyPrecipHistory = onSchedule(
                             by: 'rain',
                             prevWateredUntil: existing,
                             newWateredUntil: newUntil,
+                            addedHours: hoursToAdd,
                             loggedAt: logTime
                         })
                     });
@@ -85,6 +93,7 @@ exports.dailyPrecipHistory = onSchedule(
 )
 
 function computeWateringHours(precipMm) {
+    if (precipMm <= 2) return 0;
     if (precipMm <= 5) return 3 * 24;
     if (precipMm <= 10) return 6 * 24;
     if (precipMm <= 15) return 10 * 24;
