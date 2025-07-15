@@ -1,8 +1,9 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp, arrayUnion } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { generateSlug, generateRandomId } from '@/utils/id.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 
 export const useOrganizationsStore = defineStore('organizations', () => {
@@ -10,7 +11,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     const _orchardId = 'sad'
     const _orgId = 'Drahovce'
 
-
+    const auth = useAuthStore()
     const loading = ref(false)
     const error = ref(null)
     const CACHE_TTL = 5 * 60 * 1000
@@ -247,8 +248,22 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
 
         const prevData = { ...metaDetail.data }
+        const prevLogs = Array.isArray(prevData.logs) ? prevData.logs : [];
 
-        const newData = { ...metaDetail.data, ...updateFields }
+        const newLogEntry = {
+            type: 'watering',
+            by: auth.fullName || 'user',
+            prevWateredUntil: prevData.wateredUntil,
+            newWateredUntil: updateFields.wateredUntil,
+            loggedAt: Timestamp.now()
+        }
+
+        const newData = {
+            ...metaDetail.data,
+            ...updateFields,
+            logs: [...prevLogs, newLogEntry]
+        }
+
         treesDetailCache.set(treeId, {
             data: newData
         })
@@ -261,10 +276,16 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         );
 
         try {
-            await updateDoc(treeRef, updateFields)
+            await updateDoc(treeRef, {
+                ...updateFields,
+                logs: arrayUnion(newLogEntry)
+            })
 
             // If the data is successfully saved, I will also update it in the local cache for orchardCache
-            updateTreeInOrchard(orchardId, treeId, updateFields)
+            updateTreeInOrchard(orchardId, treeId, {
+                ...updateFields,
+                logs: [newLogEntry]
+            })
 
         } catch (error) {
             treesDetailCache.set(treeId, {

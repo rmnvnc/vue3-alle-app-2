@@ -8,6 +8,7 @@ import { computed, ref } from "vue";
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(null)
     const roleLevel = ref(0)
+    const fullName = ref(null)
     const isReady = ref(false)
     const isLoggedIn = computed(() => !!user.value)
 
@@ -27,6 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function logout() {
         await signOut(auth)
         user.value = null
+        data.fullName = null
         roleLevel.value = 0
     }
 
@@ -41,6 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
                 if (snap.exists()) {
                     const data = snap.data()
                     roleLevel.value = data.roleLevel || 0
+                    fullName.value = data.fullName
                 }
             }
 
@@ -52,6 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
         user,
         isReady,
         isLoggedIn,
+        fullName,
         login,
         logout,
         initAuth,
