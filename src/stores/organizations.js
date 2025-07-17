@@ -1,6 +1,6 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp, arrayUnion } from 'firebase/firestore'
+import { collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { generateSlug, generateRandomId } from '@/utils/id.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -240,59 +240,70 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     }
 
     async function updateTreeData(orgId, orchardId, treeId, updateFields) {
-        // Find tree in tree detail cache
         const metaDetail = treesDetailCache.get(treeId)
-
         if (!metaDetail) {
-            throw new Error(`Strom ${treeId} nie je v cache`);
+            throw new Error(`Strom ${treeId} nie je v cache`)
         }
 
-        const prevData = { ...metaDetail.data }
-        const prevLogs = Array.isArray(prevData.logs) ? prevData.logs : [];
+        // Uložíme predchádzajúci stav pre rollback
+        const prevDetail = { ...metaDetail.data }
+        const prevOrchardEntry = treesForOrchardCache
+            .get(orchardId)
+            ?.data.find(t => t.id === treeId)
 
+        // Pripravíme log entry
         const newLogEntry = {
-            type: 'watering',
-            by: auth.fullName || 'user',
-            prevWateredUntil: prevData.wateredUntil,
+            type: 'MANUAL_WATERING',
+            by: auth.fullName || auth.uid || 'user',
+            prevWateredUntil: prevDetail.wateredUntil || null,
             newWateredUntil: updateFields.wateredUntil,
             loggedAt: Timestamp.now()
         }
 
-        const newData = {
-            ...metaDetail.data,
-            ...updateFields,
-            logs: [...prevLogs, newLogEntry]
+        // --- OPTIMISTIC UPDATE ---
+        //  a) detail
+        metaDetail.data.wateredUntil = updateFields.wateredUntil
+        if (Array.isArray(metaDetail.data.logs)) {
+            metaDetail.data.logs.push(newLogEntry)
+        }
+        //  b) summary v orchardsCache (len polia, nie logs)
+        if (prevOrchardEntry) {
+            Object.assign(prevOrchardEntry, updateFields)
         }
 
-        treesDetailCache.set(treeId, {
-            data: newData
-        })
-
+        // Firestore referencie
         const treeRef = doc(
             db,
-            "organizations", orgId,
-            "orchards", orchardId,
-            "trees", treeId
-        );
+            'organizations', orgId,
+            'orchards', orchardId,
+            'trees', treeId
+        )
+        const logsCol = collection(
+            db,
+            'organizations', orgId,
+            'orchards', orchardId,
+            'trees', treeId,
+            'logs'
+        )
 
         try {
+            // 2) aktualizujeme hlavný stromový dokument (wateredUntil + updatedAt)
             await updateDoc(treeRef, {
                 ...updateFields,
-                logs: arrayUnion(newLogEntry)
+                updatedAt: serverTimestamp()
             })
 
-            // If the data is successfully saved, I will also update it in the local cache for orchardCache
-            updateTreeInOrchard(orchardId, treeId, {
-                ...updateFields,
-                logs: [newLogEntry]
-            })
+            // 3) pridáme samostatný dokument do subkolekcie logs
+            await addDoc(logsCol, newLogEntry)
 
-        } catch (error) {
-            treesDetailCache.set(treeId, {
-                data: prevData
-            });
-            console.error("Optimistic update stromu zlyhalo, rollbackujem:", error);
-            throw error;
+        } catch (err) {
+            // --- ROLLBACK ---
+            Object.assign(metaDetail.data, prevDetail)
+            if (prevOrchardEntry) {
+                prevOrchardEntry.wateredUntil = prevDetail.wateredUntil
+            }
+            console.error('[updateTreeData] rollback due to', err)
+            throw err
         }
     }
 
