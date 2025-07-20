@@ -1,15 +1,15 @@
 <script setup>
 import { onMounted } from 'vue';
-import { useOrganizationsStore } from '@/stores/organizations';
+import { useTreesStore } from '@/stores/organizations';
 import { storeToRefs } from 'pinia';
 
-const orgStore = useOrganizationsStore()
-const { organization, orchards, loading, error } = storeToRefs(orgStore)
+const treesStore = useTreesStore()
+const { organization, orchards, loading, error } = storeToRefs(treesStore)
 
 const { orgId } = defineProps(['orgId'])
 
 onMounted(() => {
-    orgStore.fetchOrganization(orgId)
+    treesStore.fetchOrganization(orgId)
 })
 
 </script>

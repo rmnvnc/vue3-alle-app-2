@@ -6,7 +6,7 @@ import { generateSlug, generateRandomId } from '@/utils/id.js'
 import { useAuthStore } from '@/stores/auth.js'
 
 
-export const useOrganizationsStore = defineStore('organizations', () => {
+export const useTreesStore = defineStore('trees', () => {
     //HARDCODED
     const _orchardId = 'sad'
     const _orgId = 'Drahovce'

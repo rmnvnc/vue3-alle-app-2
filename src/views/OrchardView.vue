@@ -19,13 +19,13 @@
 
 <script setup>
 import { onMounted, computed, ref } from 'vue'
-import { useOrganizationsStore } from '@/stores/organizations'
+import { useTreesStore } from '@/stores/organizations'
 import TreeListItem from '@/components/trees/TreeListItem.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
 import { useAuthStore } from '@/stores/auth'
 
-const orgStore = useOrganizationsStore()
-const { getTreesForOrchard, addTree, _orgId, _orchardId } = orgStore
+const treesStore = useTreesStore()
+const { getTreesForOrchard, addTree, _orgId, _orchardId } = treesStore
 
 const auth = useAuthStore()
 
@@ -36,7 +36,7 @@ onMounted(async () => {
     loading.value = true;
     error.value = ''
     try {
-        await orgStore.fetchTrees(_orgId, _orchardId)
+        await treesStore.fetchTrees(_orgId, _orchardId)
     } catch (e) {
         error.value = e.message
     } finally {

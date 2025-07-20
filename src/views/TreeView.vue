@@ -40,12 +40,12 @@
 
 <script setup>
 import { onMounted, computed, ref } from 'vue';
-import { useOrganizationsStore } from '@/stores/organizations';
+import { useTreesStore } from '@/stores/organizations';
 import { useRemainingTime } from '@/composables/useRemainingTime';
 import { useAuthStore } from '@/stores/auth'
 
-const orgStore = useOrganizationsStore()
-const { getTreeData, waterTree, _orgId, _orchardId } = orgStore
+const treesStore = useTreesStore()
+const { getTreeData, waterTree, _orgId, _orchardId } = treesStore
 
 const { treeId, treeSlug } = defineProps(['treeId', 'treeSlug'])
 const auth = useAuthStore()
@@ -56,7 +56,7 @@ const error = ref('')
 onMounted(async () => {
     loading.value = true
     try {
-        await orgStore.fetchTree(_orgId, _orchardId, treeId)
+        await treesStore.fetchTree(_orgId, _orchardId, treeId)
     } catch (e) {
         error.value = e.message
     } finally {
