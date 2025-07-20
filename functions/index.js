@@ -48,7 +48,7 @@ exports.dailyPrecipHistory = onSchedule(
                     console.log(
                         `V Sade nepršalo`
                     );
-                    return
+                    continue
                 }
 
                 const batch = db.batch();
@@ -67,16 +67,20 @@ exports.dailyPrecipHistory = onSchedule(
                     );
 
                     batch.update(treeDoc.ref, {
-                        wateredUntil: newUntil,
-                        logs: FieldValue.arrayUnion({
-                            type: 'watering',
-                            by: 'rain',
-                            prevWateredUntil: existing,
-                            newWateredUntil: newUntil,
-                            addedHours: hoursToAdd,
-                            loggedAt: logTime
-                        })
+                        wateredUntil: newUntil
                     });
+
+                    const logRef = treeDoc.ref.collection('logs').doc()
+
+                    batch.set(logRef, {
+                        type: 'AUTOMATIC_WATERING',
+                        by: 'rain',
+                        byId: '0',
+                        prevWateredUntil: existing,
+                        newWateredUntil: newUntil,
+                        addedHours: hoursToAdd,
+                        loggedAt: logTime
+                    })
                 }
                 await batch.commit();
 

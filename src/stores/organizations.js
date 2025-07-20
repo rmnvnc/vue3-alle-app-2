@@ -1,6 +1,6 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp, arrayUnion } from 'firebase/firestore'
+import { collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp, orderBy, limit, query } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { generateSlug, generateRandomId } from '@/utils/id.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -12,83 +12,12 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     const _orgId = 'Drahovce'
 
     const auth = useAuthStore()
-    const loading = ref(false)
-    const error = ref(null)
     const CACHE_TTL = 5 * 60 * 1000
-
-    // organization and orchards cached together!
-    const orgCache = ref({ data: null, fetchedAt: 0 })
-    const organization = computed(() => orgCache.value.data)
-    const orchards = ref([])
-
-    // with organization i get orchards
-    async function fetchOrganization(orgId) {
-        const now = Date.now()
-
-        if (orgCache.value.data?.id === orgId && (now - orgCache.value.fetchedAt) < CACHE_TTL) {
-            console.log('[♻️] cached Organization and Orchards')
-            return
-        }
-
-        console.log('[📨] fetchOrganization running')
-        loading.value = true
-        error.value = null
-
-        try {
-            if (!orgId) {
-                throw new Error('Organization ID missing')
-            }
-
-            // Load organization Document
-            const orgDocRef = doc(db, 'organizations', orgId)
-            const orgSnapshot = await getDoc(orgDocRef)
-
-            if (!orgSnapshot.exists()) {
-                throw new Error(`Organization with ID "${orgId}" does not exist`)
-            }
-
-            const loadedOrg = { id: orgSnapshot.id, ...orgSnapshot.data() }
-            orgCache.value = { data: loadedOrg, fetchedAt: now }
-
-            // Load orchards in Organization
-            const orchardsCol = collection(db, 'organizations', orgId, 'orchards')
-            const orchardsSnap = await getDocs(orchardsCol)
-
-            orchards.value = orchardsSnap.docs.map(docSnapshot => ({
-                id: docSnapshot.id,
-                ...docSnapshot.data()
-            }))
-
-        } catch (err) {
-            console.error('Error when loading:', err)
-            error.value = err.message || 'Failed to load organization.'
-        } finally {
-            loading.value = false
-        }
-    }
 
     const treesForOrchardCache = reactive(new Map())
 
     function getTreesForOrchard(id) {
         return treesForOrchardCache.get(id)?.data || []
-    }
-
-    function updateTreeInOrchard(orchardId, treeId, updatedFields) {
-        const orchardCache = treesForOrchardCache.get(orchardId)
-        if (!orchardCache) {
-            return
-        }
-
-        const newData = orchardCache.data.map(tree =>
-            tree.id === treeId
-                ? { ...tree, ...updatedFields }
-                : tree
-        )
-
-        treesForOrchardCache.set(orchardId, {
-            data: newData,
-            fetchedAt: orchardCache.fetchedAt
-        })
     }
 
     async function fetchTrees(orgId, orchardId) {
@@ -166,9 +95,17 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
             if (!snap.exists()) throw new Error('Tree not found')
 
+            // Get logs for tree
+            const logsRef = collection(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId, 'logs')
+            const q = query(logsRef, orderBy('loggedAt', 'desc'), limit(5))
+            const logSnap = await getDocs(q)
+            const logs = logSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+
             treesDetailCache.set(snap.id, {
-                data: { ...snap.data() },
-                fetchedAt: now
+                data: { ...snap.data(), logs: logs },
+                fetchedAt: now,
+
             })
         } catch (error) {
             throw error
@@ -231,7 +168,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         const nextDate = new Date(baseDate.getTime() + 14 * msPerDay);
         const nextTs = Timestamp.fromDate(nextDate);
         try {
-            await updateTreeData(orgId, orchardId, treeId, {
+            await updateTreeData(orgId, orchardId, treeId, 'MANUAL_WATERING', {
                 wateredUntil: nextTs
             });
         } catch (error) {
@@ -239,71 +176,87 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
-    async function updateTreeData(orgId, orchardId, treeId, updateFields) {
-        // Find tree in tree detail cache
+    /**
+     * Zaloguje udalosť stromu do subkolekcie logs.
+     *
+     * @param {string} orgId 
+     * @param {string} orchardId 
+     * @param {string} treeId 
+     * @param {'CREATE'|'MANUAL_WATERING'|'AUTOMATIC_WATERING'|'UPDATE'} logType 
+     * @param {object} updateFields  – všetky ďalšie polia, ktoré chceš uložiť (prevWateredUntil, newWateredUntil, addedHours, changedFields…)
+    */
+    async function updateTreeData(orgId, orchardId, treeId, logType, updateFields) {
         const metaDetail = treesDetailCache.get(treeId)
-
         if (!metaDetail) {
-            throw new Error(`Strom ${treeId} nie je v cache`);
+            throw new Error(`Strom ${treeId} nie je v cache`)
         }
 
-        const prevData = { ...metaDetail.data }
-        const prevLogs = Array.isArray(prevData.logs) ? prevData.logs : [];
+        // Uložíme predchádzajúci stav pre rollback
+        const prevDetail = { ...metaDetail.data }
+        const prevOrchardEntry = treesForOrchardCache
+            .get(orchardId)
+            ?.data.find(t => t.id === treeId)
 
+        // Pripravíme log entry
         const newLogEntry = {
-            type: 'watering',
+            type: logType,
             by: auth.fullName || 'user',
-            prevWateredUntil: prevData.wateredUntil,
-            newWateredUntil: updateFields.wateredUntil,
+            byId: auth.user.uid || '0',
+            prevWateredUntil: prevDetail.wateredUntil || null,
+            newWateredUntil: updateFields.wateredUntil || null,
             loggedAt: Timestamp.now()
         }
 
-        const newData = {
-            ...metaDetail.data,
-            ...updateFields,
-            logs: [...prevLogs, newLogEntry]
+        // --- OPTIMISTIC UPDATE ---
+        //  a) detail
+        metaDetail.data.wateredUntil = updateFields.wateredUntil
+        if (Array.isArray(metaDetail.data.logs)) {
+            metaDetail.data.logs.unshift(newLogEntry)
+        }
+        //  b) summary v orchardsCache (len polia, nie logs)
+        if (prevOrchardEntry) {
+            Object.assign(prevOrchardEntry, updateFields)
         }
 
-        treesDetailCache.set(treeId, {
-            data: newData
-        })
-
+        // Firestore referencie
         const treeRef = doc(
             db,
-            "organizations", orgId,
-            "orchards", orchardId,
-            "trees", treeId
-        );
+            'organizations', orgId,
+            'orchards', orchardId,
+            'trees', treeId
+        )
+        const logsCol = collection(
+            db,
+            'organizations', orgId,
+            'orchards', orchardId,
+            'trees', treeId,
+            'logs'
+        )
 
         try {
+            // 2) aktualizujeme hlavný stromový dokument (wateredUntil + updatedAt)
             await updateDoc(treeRef, {
                 ...updateFields,
-                logs: arrayUnion(newLogEntry)
+                updatedAt: serverTimestamp()
             })
 
-            // If the data is successfully saved, I will also update it in the local cache for orchardCache
-            updateTreeInOrchard(orchardId, treeId, {
-                ...updateFields,
-                logs: [newLogEntry]
-            })
+            // 3) pridáme samostatný dokument do subkolekcie logs
+            await addDoc(logsCol, newLogEntry)
 
-        } catch (error) {
-            treesDetailCache.set(treeId, {
-                data: prevData
-            });
-            console.error("Optimistic update stromu zlyhalo, rollbackujem:", error);
-            throw error;
+        } catch (err) {
+            // --- ROLLBACK ---
+            Object.assign(metaDetail.data, prevDetail)
+            if (prevOrchardEntry) {
+                prevOrchardEntry.wateredUntil = prevDetail.wateredUntil
+            }
+            console.error('[updateTreeData] rollback due to', err)
+            throw err
         }
     }
 
     return {
         _orchardId,
         _orgId,
-
-        loading,
-        error,
-        organization,
-        orchards,
 
         fetchTrees,
         getTreesForOrchard,
