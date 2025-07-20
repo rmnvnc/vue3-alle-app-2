@@ -28,7 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function logout() {
         await signOut(auth)
         user.value = null
-        data.fullName = null
+        fullName.value = null
         roleLevel.value = 0
     }
 
