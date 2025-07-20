@@ -48,7 +48,7 @@ exports.dailyPrecipHistory = onSchedule(
                     console.log(
                         `V Sade nepršalo`
                     );
-                    return
+                    continue
                 }
 
                 const batch = db.batch();
