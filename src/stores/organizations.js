@@ -12,83 +12,12 @@ export const useOrganizationsStore = defineStore('organizations', () => {
     const _orgId = 'Drahovce'
 
     const auth = useAuthStore()
-    const loading = ref(false)
-    const error = ref(null)
     const CACHE_TTL = 5 * 60 * 1000
-
-    // organization and orchards cached together!
-    const orgCache = ref({ data: null, fetchedAt: 0 })
-    const organization = computed(() => orgCache.value.data)
-    const orchards = ref([])
-
-    // with organization i get orchards
-    async function fetchOrganization(orgId) {
-        const now = Date.now()
-
-        if (orgCache.value.data?.id === orgId && (now - orgCache.value.fetchedAt) < CACHE_TTL) {
-            console.log('[♻️] cached Organization and Orchards')
-            return
-        }
-
-        console.log('[📨] fetchOrganization running')
-        loading.value = true
-        error.value = null
-
-        try {
-            if (!orgId) {
-                throw new Error('Organization ID missing')
-            }
-
-            // Load organization Document
-            const orgDocRef = doc(db, 'organizations', orgId)
-            const orgSnapshot = await getDoc(orgDocRef)
-
-            if (!orgSnapshot.exists()) {
-                throw new Error(`Organization with ID "${orgId}" does not exist`)
-            }
-
-            const loadedOrg = { id: orgSnapshot.id, ...orgSnapshot.data() }
-            orgCache.value = { data: loadedOrg, fetchedAt: now }
-
-            // Load orchards in Organization
-            const orchardsCol = collection(db, 'organizations', orgId, 'orchards')
-            const orchardsSnap = await getDocs(orchardsCol)
-
-            orchards.value = orchardsSnap.docs.map(docSnapshot => ({
-                id: docSnapshot.id,
-                ...docSnapshot.data()
-            }))
-
-        } catch (err) {
-            console.error('Error when loading:', err)
-            error.value = err.message || 'Failed to load organization.'
-        } finally {
-            loading.value = false
-        }
-    }
 
     const treesForOrchardCache = reactive(new Map())
 
     function getTreesForOrchard(id) {
         return treesForOrchardCache.get(id)?.data || []
-    }
-
-    function updateTreeInOrchard(orchardId, treeId, updatedFields) {
-        const orchardCache = treesForOrchardCache.get(orchardId)
-        if (!orchardCache) {
-            return
-        }
-
-        const newData = orchardCache.data.map(tree =>
-            tree.id === treeId
-                ? { ...tree, ...updatedFields }
-                : tree
-        )
-
-        treesForOrchardCache.set(orchardId, {
-            data: newData,
-            fetchedAt: orchardCache.fetchedAt
-        })
     }
 
     async function fetchTrees(orgId, orchardId) {
@@ -329,11 +258,6 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         _orchardId,
         _orgId,
 
-        loading,
-        error,
-        organization,
-        orchards,
-
         fetchTrees,
         getTreesForOrchard,
 
@@ -342,9 +266,6 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         getTreeMeta,
         addTree,
         waterTree,
-
-
-        treesDetailCache
     }
 
 
