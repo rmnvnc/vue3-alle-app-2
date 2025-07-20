@@ -231,7 +231,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         const nextDate = new Date(baseDate.getTime() + 14 * msPerDay);
         const nextTs = Timestamp.fromDate(nextDate);
         try {
-            await updateTreeData(orgId, orchardId, treeId, {
+            await updateTreeData(orgId, orchardId, treeId, 'MANUAL_WATERING', {
                 wateredUntil: nextTs
             });
         } catch (error) {
@@ -239,7 +239,16 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         }
     }
 
-    async function updateTreeData(orgId, orchardId, treeId, updateFields) {
+    /**
+     * Zaloguje udalosť stromu do subkolekcie logs.
+     *
+     * @param {string} orgId 
+     * @param {string} orchardId 
+     * @param {string} treeId 
+     * @param {'CREATE'|'MANUAL_WATERING'|'AUTOMATIC_WATERING'|'UPDATE'} logType 
+     * @param {object} updateFields  – všetky ďalšie polia, ktoré chceš uložiť (prevWateredUntil, newWateredUntil, addedHours, changedFields…)
+    */
+    async function updateTreeData(orgId, orchardId, treeId, logType, updateFields) {
         const metaDetail = treesDetailCache.get(treeId)
         if (!metaDetail) {
             throw new Error(`Strom ${treeId} nie je v cache`)
@@ -253,10 +262,11 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
         // Pripravíme log entry
         const newLogEntry = {
-            type: 'MANUAL_WATERING',
-            by: auth.fullName || auth.uid || 'user',
+            type: logType,
+            by: auth.fullName || 'user',
+            byId: auth.user.uid || '0',
             prevWateredUntil: prevDetail.wateredUntil || null,
-            newWateredUntil: updateFields.wateredUntil,
+            newWateredUntil: updateFields.wateredUntil || null,
             loggedAt: Timestamp.now()
         }
 

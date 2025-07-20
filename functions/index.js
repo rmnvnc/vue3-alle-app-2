@@ -71,9 +71,11 @@ exports.dailyPrecipHistory = onSchedule(
                     });
 
                     const logRef = treeDoc.ref.collection('logs').doc()
+
                     batch.set(logRef, {
-                        type: 'AUTO_WATERING',
+                        type: 'AUTOMATIC_WATERING',
                         by: 'rain',
+                        byId: '0',
                         prevWateredUntil: existing,
                         newWateredUntil: newUntil,
                         addedHours: hoursToAdd,
