@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted } from 'vue';
-import { useTreesStore } from '@/stores/organizations';
+import { useTreesStore } from '@/stores/trees.ts';
 import { storeToRefs } from 'pinia';
 
 const treesStore = useTreesStore()

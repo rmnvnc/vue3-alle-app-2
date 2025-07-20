@@ -19,7 +19,7 @@
 
 <script setup>
 import { onMounted, computed, ref } from 'vue'
-import { useTreesStore } from '@/stores/organizations'
+import { useTreesStore } from '@/stores/trees.ts'
 import TreeListItem from '@/components/trees/TreeListItem.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
 import { useAuthStore } from '@/stores/auth'

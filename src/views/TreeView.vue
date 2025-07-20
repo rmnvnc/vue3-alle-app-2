@@ -30,7 +30,9 @@
                     <template v-else>
                         <strong>{{ log.by }}</strong>
                     </template>
-                    zalial strom do {{ log.newWateredUntil.toDate().toLocaleString() }}.
+                    <template v-if="log.newWateredUntil">
+                        zalial strom do {{ log.newWateredUntil.toDate().toLocaleString() }}.
+                    </template>
                     <br><br>
                 </li>
             </ol>
@@ -40,7 +42,7 @@
 
 <script setup>
 import { onMounted, computed, ref } from 'vue';
-import { useTreesStore } from '@/stores/organizations';
+import { useTreesStore } from '@/stores/trees.ts';
 import { useRemainingTime } from '@/composables/useRemainingTime';
 import { useAuthStore } from '@/stores/auth'
 
