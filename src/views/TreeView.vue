@@ -90,8 +90,7 @@ async function wTree() {
 }
 
 const recentLogs = computed(() => {
-    const logs = tree.value?.logs || [];
-    return logs.slice(-5).reverse();
+    return tree.value?.logs || [];
 });
 
 function diffInDays(date1, date2) {

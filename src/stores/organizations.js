@@ -1,6 +1,6 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import { collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
+import { collection, addDoc, doc, getDoc, getDocs, setDoc, updateDoc, serverTimestamp, Timestamp, orderBy, limit, query } from 'firebase/firestore'
 import { db } from '../firebase.js'
 import { generateSlug, generateRandomId } from '@/utils/id.js'
 import { useAuthStore } from '@/stores/auth.js'
@@ -166,9 +166,17 @@ export const useOrganizationsStore = defineStore('organizations', () => {
 
             if (!snap.exists()) throw new Error('Tree not found')
 
+            // Get logs for tree
+            const logsRef = collection(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId, 'logs')
+            const q = query(logsRef, orderBy('loggedAt', 'desc'), limit(5))
+            const logSnap = await getDocs(q)
+            const logs = logSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+
             treesDetailCache.set(snap.id, {
-                data: { ...snap.data() },
-                fetchedAt: now
+                data: { ...snap.data(), logs: logs },
+                fetchedAt: now,
+
             })
         } catch (error) {
             throw error
@@ -274,7 +282,7 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         //  a) detail
         metaDetail.data.wateredUntil = updateFields.wateredUntil
         if (Array.isArray(metaDetail.data.logs)) {
-            metaDetail.data.logs.push(newLogEntry)
+            metaDetail.data.logs.unshift(newLogEntry)
         }
         //  b) summary v orchardsCache (len polia, nie logs)
         if (prevOrchardEntry) {
@@ -334,6 +342,9 @@ export const useOrganizationsStore = defineStore('organizations', () => {
         getTreeMeta,
         addTree,
         waterTree,
+
+
+        treesDetailCache
     }
 
 
