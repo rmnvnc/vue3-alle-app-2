@@ -14,10 +14,11 @@ import {
     limit,
     query,
 } from 'firebase/firestore'
-import { db } from '../firebase.js'
+import { db } from '@/firebase'
 import { generateSlug, generateRandomId } from '@/utils/id.js'
 import { useAuthStore } from '@/stores/auth.js'
-import { createLogEntry } from '@/utils/logs.js'
+import { createLogEntry, TreeLogEntry } from '@/types/log.js'
+import { Tree, TreeWithLogs } from '@/types/tree.js'
 
 export const useTreesStore = defineStore('trees', () => {
     //HARDCODED
@@ -29,11 +30,11 @@ export const useTreesStore = defineStore('trees', () => {
 
     const treesForOrchardCache = reactive(new Map())
 
-    function getTreesForOrchard(id) {
+    function getTreesForOrchard(id: any) {
         return treesForOrchardCache.get(id)?.data || []
     }
 
-    async function fetchTrees(orgId, orchardId) {
+    async function fetchTrees(orgId: string, orchardId: string) {
         const now = Date.now()
         const orchard = treesForOrchardCache.get(orchardId)
 
@@ -83,16 +84,16 @@ export const useTreesStore = defineStore('trees', () => {
         }
     }
 
-    const treesDetailCache = reactive(new Map())
+    const treesDetailCache = reactive(new Map<string, { data: TreeWithLogs; fetchedAt: number }>())
 
-    function getTreeData(id) {
+    function getTreeData(id: string) {
         return computed(() => treesDetailCache.get(id)?.data || null)
     }
-    function getTreeMeta(id) {
+    function getTreeMeta(id: string) {
         return treesDetailCache.get(id)
     }
 
-    async function fetchTree(orgId, orchardId, treeId) {
+    async function fetchTree(orgId: string, orchardId: string, treeId: string): Promise<void> {
         const now = Date.now()
 
         const cached = getTreeMeta(treeId)
@@ -107,29 +108,30 @@ export const useTreesStore = defineStore('trees', () => {
                 throw new Error('Organization ID or Orchard ID or Tree ID missing')
             }
 
-            const snap = await getDoc(
-                doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId),
-            )
+            const treeRef = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
+            const snap = await getDoc(treeRef)
 
             if (!snap.exists()) throw new Error('Tree not found')
 
+            const treeData = snap.data() as Omit<Tree, 'id'>
+            const tree: Tree = { id: snap.id, ...treeData }
             // Get logs for tree
-            const logsRef = collection(
-                db,
-                'organizations',
-                orgId,
-                'orchards',
-                orchardId,
-                'trees',
-                treeId,
-                'logs',
-            )
+            const logsRef = collection(treeRef, 'logs')
+
             const q = query(logsRef, orderBy('loggedAt', 'desc'), limit(5))
             const logSnap = await getDocs(q)
-            const logs = logSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
-            treesDetailCache.set(snap.id, {
-                data: { ...snap.data(), logs: logs },
+            const logs: TreeLogEntry[] = logSnap.docs.map(
+                (doc) => ({ id: doc.id, ...doc.data() }) as TreeLogEntry,
+            )
+
+            const treeWithLogs: TreeWithLogs = {
+                ...tree,
+                logs,
+            }
+
+            treesDetailCache.set(treeId, {
+                data: treeWithLogs,
                 fetchedAt: now,
             })
         } catch (error) {
@@ -137,7 +139,11 @@ export const useTreesStore = defineStore('trees', () => {
         }
     }
 
-    async function addTree(orgId, orchardId, data) {
+    async function addTree(
+        orgId: string,
+        orchardId: string,
+        data: { treeName: any; treeVariety: any; treeOwner: any },
+    ) {
         const treeSlug = generateSlug(data.treeName)
         const treeId = generateRandomId()
 
@@ -194,7 +200,12 @@ export const useTreesStore = defineStore('trees', () => {
         }
     }
 
-    async function waterTree(orgId, orchardId, treeId, wateredUntil) {
+    async function waterTree(
+        orgId: any,
+        orchardId: any,
+        treeId: any,
+        wateredUntil: { toDate: () => any },
+    ) {
         const now = new Date()
         const msPerDay = 24 * 60 * 60 * 1000
 
@@ -215,7 +226,13 @@ export const useTreesStore = defineStore('trees', () => {
         }
     }
 
-    async function updateTreeData(orgId, orchardId, treeId, logType, updateFields) {
+    async function updateTreeData(
+        orgId: string,
+        orchardId: string,
+        treeId: string,
+        logType: string,
+        updateFields: { wateredUntil: any },
+    ) {
         const metaDetail = treesDetailCache.get(treeId)
         if (!metaDetail) {
             throw new Error(`Strom ${treeId} nie je v cache`)
@@ -225,7 +242,7 @@ export const useTreesStore = defineStore('trees', () => {
         const prevDetail = { ...metaDetail.data }
         const prevOrchardEntry = treesForOrchardCache
             .get(orchardId)
-            ?.data.find((t) => t.id === treeId)
+            ?.data.find((t: { id: any }) => t.id === treeId)
 
         // Pripravíme log entry
         const newLogEntry = createLogEntry({

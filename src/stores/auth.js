@@ -1,9 +1,9 @@
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "@/firebase";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { auth } from '@/firebase'
 import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/firebase.js'
-import { defineStore } from "pinia";
-import { computed, ref } from "vue";
+import { db } from '@/firebase'
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(null)
@@ -62,6 +62,6 @@ export const useAuthStore = defineStore('auth', () => {
         //ROLES
         canWater,
         canEdit,
-        isAdmin
+        isAdmin,
     }
 })
