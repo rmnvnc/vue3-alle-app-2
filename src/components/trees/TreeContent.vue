@@ -29,7 +29,7 @@ import { useTreesStore } from '@/stores/trees'
 import { useAuthStore } from '@/stores/auth.js'
 import TreeLogs from './TreeLogs.vue';
 import { ref, computed, ComputedRef } from 'vue';
-import { useRemainingTime } from '@/composables/useRemainingTime.js'
+import { useRemainingTime } from '@/composables/useRemainingTime'
 import { TreeLogEntry } from '@/types/log';
 import { Timestamp } from 'firebase/firestore';
 
@@ -47,7 +47,7 @@ try {
 
 const tree = getTreeData(props.treeId)
 
-const { remainingText }: { remainingText: ComputedRef<string> } = useRemainingTime(
+const { remainingText } = useRemainingTime(
     computed(() => tree.value?.wateredUntil ?? null)
 )
 

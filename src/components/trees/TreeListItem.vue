@@ -21,7 +21,7 @@
     </li>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRemainingTime } from '@/composables/useRemainingTime'
 import { computed } from 'vue'
 
