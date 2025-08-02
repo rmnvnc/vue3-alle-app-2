@@ -22,7 +22,7 @@ import { onMounted, computed, ref } from 'vue'
 import { useTreesStore } from '@/stores/trees.ts'
 import TreeListItem from '@/components/trees/TreeListItem.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth.ts'
 
 const treesStore = useTreesStore()
 const { getTreesForOrchard, addTree, _orgId, _orchardId } = treesStore

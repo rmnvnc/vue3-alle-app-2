@@ -26,7 +26,7 @@
 
 <script setup lang="ts">
 import { useTreesStore } from '@/stores/trees'
-import { useAuthStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/stores/auth'
 import TreeLogs from './TreeLogs.vue';
 import { ref, computed, ComputedRef } from 'vue';
 import { useRemainingTime } from '@/composables/useRemainingTime'

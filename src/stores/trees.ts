@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { generateSlug, generateRandomId } from '@/utils/id'
-import { useAuthStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/stores/auth'
 import { createLogEntry, TreeLogEntry } from '@/types/log.js'
 import type { LogType } from '@/types/log.js'
 import { Tree, TreeWithLogs } from '@/types/tree.js'

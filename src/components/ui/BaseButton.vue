@@ -7,7 +7,7 @@
     </router-link>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const props = defineProps({
     mode: {
         type: String,

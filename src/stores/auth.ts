@@ -1,4 +1,4 @@
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth'
 import { auth } from '@/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
@@ -6,7 +6,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 export const useAuthStore = defineStore('auth', () => {
-    const user = ref(null)
+    const user = ref<User | null>(null)
     const roleLevel = ref(0)
     const fullName = ref(null)
     const isReady = ref(false)
@@ -17,7 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
     const canEdit = computed(() => roleLevel.value >= 2)
     const isAdmin = computed(() => roleLevel.value >= 3)
 
-    async function login(email, password) {
+    async function login(email: string, password: string) {
         try {
             await signInWithEmailAndPassword(auth, email, password)
         } catch (error) {

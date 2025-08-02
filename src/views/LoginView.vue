@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/stores/auth'
 import { useRoute, useRouter } from 'vue-router'
 import { FIREBASE_ERROR_MESSAGES } from '@/utils/firebaseErrors'
 import { FirebaseError } from 'firebase/app'
