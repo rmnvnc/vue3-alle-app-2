@@ -1,4 +1,4 @@
-export const FIREBASE_ERROR_MESSAGES = {
+export const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
     'auth/invalid-email': 'Zadaný e-mail nemá správny formát.',
     'auth/user-disabled': 'Tento účet bol zablokovaný.',
     'auth/user-not-found': 'Používateľ s touto e-mailovou adresou neexistuje.',

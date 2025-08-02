@@ -15,9 +15,10 @@ import {
     query,
 } from 'firebase/firestore'
 import { db } from '@/firebase'
-import { generateSlug, generateRandomId } from '@/utils/id.js'
+import { generateSlug, generateRandomId } from '@/utils/id'
 import { useAuthStore } from '@/stores/auth.js'
 import { createLogEntry, TreeLogEntry } from '@/types/log.js'
+import type { LogType } from '@/types/log.js'
 import { Tree, TreeWithLogs } from '@/types/tree.js'
 
 export const useTreesStore = defineStore('trees', () => {
@@ -121,9 +122,10 @@ export const useTreesStore = defineStore('trees', () => {
             const q = query(logsRef, orderBy('loggedAt', 'desc'), limit(5))
             const logSnap = await getDocs(q)
 
-            const logs: TreeLogEntry[] = logSnap.docs.map(
-                (doc) => ({ id: doc.id, ...doc.data() }) as TreeLogEntry,
-            )
+            const logs: TreeLogEntry[] = logSnap.docs.map((doc) => ({
+                id: doc.id,
+                ...(doc.data() as Omit<TreeLogEntry, 'id'>),
+            }))
 
             const treeWithLogs: TreeWithLogs = {
                 ...tree,
@@ -230,7 +232,7 @@ export const useTreesStore = defineStore('trees', () => {
         orgId: string,
         orchardId: string,
         treeId: string,
-        logType: string,
+        logType: LogType,
         updateFields: { wateredUntil: any },
     ) {
         const metaDetail = treesDetailCache.get(treeId)

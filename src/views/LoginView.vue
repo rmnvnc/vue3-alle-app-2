@@ -12,16 +12,15 @@
         <base-button type="submit" :disabled="formLoading">
             {{ formLoading ? 'Prihlasujem...' : 'Prihlásiť' }}
         </base-button>
-
     </form>
-
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth.js'
 import { useRoute, useRouter } from 'vue-router'
 import { FIREBASE_ERROR_MESSAGES } from '@/utils/firebaseErrors'
+import { FirebaseError } from 'firebase/app'
 
 const auth = useAuthStore()
 
@@ -46,7 +45,7 @@ const isFormValid = computed(() =>
     )
 )
 
-function validateField(key) {
+function validateField(key: keyof typeof formSetup) {
     const field = formSetup[key]
 
     if (field.isRequired && !field.val) {
@@ -60,12 +59,12 @@ const formLoading = ref(false)
 const route = useRoute()
 const router = useRouter()
 
-const redirectPath = route.query.redirect || '/'
+const redirectPath = (route.query.redirect as string) || '/'
 const error = ref('')
 
 const loginForm = async () => {
 
-    Object.keys(formSetup).forEach(validateField)
+    (Object.keys(formSetup) as (keyof typeof formSetup)[]).forEach(validateField)
 
     if (!isFormValid.value) {
         return
@@ -78,8 +77,8 @@ const loginForm = async () => {
         await auth.login(formSetup.email.val, formSetup.password.val)
         router.push(redirectPath)
     } catch (e) {
-        console.log(e.code)
-        error.value = FIREBASE_ERROR_MESSAGES[e.code] || 'Nastala neznáma chyba, skúste sa prihlásiť neskôr'
+        const err = e as FirebaseError
+        error.value = FIREBASE_ERROR_MESSAGES[err.code] || 'Nastala neznáma chyba, skúste sa prihlásiť neskôr'
     } finally {
         formLoading.value = false
     }
