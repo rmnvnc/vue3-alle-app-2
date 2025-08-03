@@ -8,7 +8,7 @@ import { computed, ref } from 'vue'
 export const useAuthStore = defineStore('auth', () => {
     const user = ref<User | null>(null)
     const roleLevel = ref(0)
-    const fullName = ref(null)
+    const fullName = ref<string | null>(null)
     const isReady = ref(false)
     const isLoggedIn = computed(() => !!user.value)
 

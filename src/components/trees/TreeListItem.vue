@@ -1,8 +1,8 @@
 <template>
     <li :class="waterStatus">
-        <router-link v-if="tree.slug && tree.id" :to="{
+        <router-link :to="{
             name: 'tree-view',
-            params: { orgId: orgId, orchardId: orchardId, treeId: tree.id, treeSlug: tree.slug }
+            params: { treeId: String(tree.id), treeSlug: String(tree.slug) }
         }">{{ tree.name }}
             <br>
             {{ remainingText }}
@@ -15,26 +15,22 @@
                 Odroda: {{ tree.variety }}
             </template>
         </router-link>
-        <span v-else>
-            {{ tree.name }}
-        </span>
     </li>
 </template>
 
 <script setup lang="ts">
 import { useRemainingTime } from '@/composables/useRemainingTime'
 import { computed } from 'vue'
+import type { Tree } from '@/types/tree'
 
-const props = defineProps({
-    tree: Object,
-    orgId: String,
-    orchardId: String
-})
+const props = defineProps<{
+    tree: Tree,
+}>()
 
-const { tree, orgId, orchardId } = props
+const { tree } = props
 
 const { remainingText, remainingDays } = useRemainingTime(
-    computed(() => tree?.wateredUntil ?? null)
+    computed(() => tree.wateredUntil ?? null)
 )
 
 const waterStatus = computed(() => {
@@ -80,12 +76,12 @@ li.orange {
 }
 
 li.green {
-    border-color: green;
+    border-color: rgb(0, 158, 0);
     background-color: rgba(0, 128, 0, 0.1);
 }
 
-li.greenLight {
-    border-color: rgb(0, 225, 0);
+li.lightGreen {
+    border-color: rgba(0, 225, 0, 0.475);
     background-color: rgba(0, 225, 0, 0.1);
 }
 </style>

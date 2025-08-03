@@ -19,8 +19,8 @@
 
 </template>
 
-<script setup>
-const props = defineProps({
+<script setup lang="ts">
+const { show, title, fixed } = defineProps({
     show: {
         type: Boolean,
         required: true
@@ -38,7 +38,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 function tryClose() {
-    if (props.fixed) {
+    if (fixed) {
         return
     }
     emit('close')

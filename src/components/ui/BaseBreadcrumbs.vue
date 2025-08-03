@@ -12,24 +12,29 @@
     </nav>
 </template>
 
-<script setup>
-import { computed } from 'vue'
+<script setup lang="ts">
+import { computed, type ComputedRef } from 'vue'
 import { useRoute, RouterLink, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
 
-const crumbs = computed(() => {
+export interface BreadCrumbItem {
+    label: string
+    to: string
+}
+
+const crumbs: ComputedRef<BreadCrumbItem[]> = computed(() => {
     const parts = route.path.split('/').filter(Boolean)
 
-    const list = [{ label: 'Domov', to: '/' }]
+    const list: BreadCrumbItem[] = [{ label: 'Domov', to: '/' }]
 
     parts.forEach((segment, idx) => {
         const to = '/' + parts.slice(0, idx + 1).join('/')
-        let label
+        let label: string
 
         if (router.currentRoute.value.name === 'tree-view' && idx === parts.length - 1) {
-            label = route.params.treeSlug
+            label = route.params.treeSlug as string
         } else {
             const raw = decodeURIComponent(segment)
             label = raw

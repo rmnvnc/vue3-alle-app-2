@@ -8,10 +8,10 @@
     </teleport>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { watch } from 'vue'
 
-const props = defineProps({
+const { message, type, duration, show } = defineProps({
     message: {
         type: String,
         default: ''
@@ -33,11 +33,11 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 
-watch(() => props.show, (val) => {
+watch(() => show, (val) => {
     if (val) {
         setTimeout(() => {
             emit('close')
-        }, props.duration)
+        }, duration)
     }
 })
 </script>

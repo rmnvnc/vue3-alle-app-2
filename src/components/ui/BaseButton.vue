@@ -8,19 +8,17 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
-    mode: {
-        type: String,
-        default: null
-    },
-    link: {
-        type: Boolean,
-        default: false
-    },
-    to: {
-        type: String,
-        default: '/'
-    }
+
+interface Props {
+    mode?: string | null
+    link?: boolean
+    to?: string
+}
+
+const { mode, link, to } = withDefaults(defineProps<Props>(), {
+    mode: null,
+    link: false,
+    to: '/'
 })
 </script>
 

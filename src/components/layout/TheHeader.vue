@@ -1,7 +1,7 @@
 <template>
     <header>
         <template v-if="auth.isLoggedIn">
-            Vitaj, {{ auth.user.email }} <base-button @click="auth.logout()">Odhlásiť</base-button>
+            Vitaj, {{ auth.user?.email }} <base-button @click="auth.logout()">Odhlásiť</base-button>
             <span class="role-check">
                 <span class="active">Sledovať</span><br>
                 <span :class="{ active: auth.canWater }">Polievať</span><br>
@@ -12,7 +12,7 @@
     </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()

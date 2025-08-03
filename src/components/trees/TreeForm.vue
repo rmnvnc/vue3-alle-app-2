@@ -15,8 +15,8 @@
     </form>
 </template>
 
-<script setup>
-import { ref, reactive, computed } from 'vue'
+<script setup lang="ts">
+import { reactive, computed } from 'vue'
 
 const props = defineProps({
     formLoading: Boolean,
@@ -52,7 +52,7 @@ const formSetup = reactive({
     }
 })
 
-function validateField(key) {
+function validateField(key: keyof typeof formSetup) {
     const field = formSetup[key]
 
     if (field.isRequired && !field.val) {
@@ -64,7 +64,7 @@ function validateField(key) {
 
 function submitForm() {
 
-    Object.keys(formSetup).forEach(validateField)
+    (Object.keys(formSetup) as (keyof typeof formSetup)[]).forEach(validateField)
 
     if (!isFormValid.value) {
         return

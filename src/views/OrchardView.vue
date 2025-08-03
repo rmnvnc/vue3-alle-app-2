@@ -9,20 +9,19 @@
         <div v-else>
             <h1>Orchard: {{ _orchardId }}</h1>
             <base-button @click="handleTreeForm" :disabled="!auth.canEdit">Pridať strom</base-button>
-            <transition-group name="tree" tag="ul">
-                <tree-list-item v-for="tree in trees" :key="tree.id" :tree="tree">
-                </tree-list-item>
-            </transition-group>
+            <tree-list :items="trees"></tree-list>
         </div>
     </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import { useTreesStore } from '@/stores/trees.ts'
-import TreeListItem from '@/components/trees/TreeListItem.vue'
+import { useTreesStore } from '@/stores/trees'
+import { useAuthStore } from '@/stores/auth'
+import TreeList from '@/components/trees/TreeList.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
-import { useAuthStore } from '@/stores/auth.ts'
+import { FirebaseError } from 'firebase/app'
+import { Tree } from '@/types/tree'
 
 const treesStore = useTreesStore()
 const { getTreesForOrchard, addTree, _orgId, _orchardId } = treesStore
@@ -38,7 +37,8 @@ onMounted(async () => {
     try {
         await treesStore.fetchTrees(_orgId, _orchardId)
     } catch (e) {
-        error.value = e.message
+        const err = e as FirebaseError
+        error.value = err.message
     } finally {
         loading.value = false
     }
@@ -47,7 +47,7 @@ onMounted(async () => {
 const trees = computed(() => {
     return getTreesForOrchard(_orchardId)
         .slice()
-        .sort((a, b) => {
+        .sort((a: Tree, b: Tree) => {
             const aHasWater = a.wateredUntil != null
             const bHasWater = b.wateredUntil != null
 
@@ -66,7 +66,7 @@ const trees = computed(() => {
             if (!aHasWater) return -1
             if (!bHasWater) return 1
 
-            return a.wateredUntil - b.wateredUntil
+            return a.wateredUntil!.toMillis() - b.wateredUntil!.toMillis()
         })
 })
 
@@ -81,7 +81,7 @@ const formLoading = ref(false)
 const showToast = ref(false)
 const formError = ref('')
 
-async function saveData(data) {
+async function saveData(data: { treeName: string; treeVariety: string; treeOwner: string }) {
     formLoading.value = true
     showToast.value = false
     formError.value = ''
@@ -89,8 +89,9 @@ async function saveData(data) {
         await addTree(_orgId, _orchardId, data)
         handleTreeForm()
         showToast.value = true
-    } catch (error) {
-        formError.value = error.message || 'Nastala neočakávaná chyba.'
+    } catch (e) {
+        const err = e as FirebaseError
+        formError.value = err.message || 'Nastala neočakávaná chyba.'
     } finally {
         formLoading.value = false
     }
@@ -99,24 +100,7 @@ async function saveData(data) {
 </script>
 
 <style scoped>
-ul {
-    padding: unset;
-    list-style: none;
-    margin-top: 2rem;
-}
-
 h1 {
     margin-bottom: 1rem;
-}
-
-.tree-enter-from,
-.tree-leave-to {
-    opacity: 0;
-    transform: translateX(-10px);
-}
-
-.tree-enter-active,
-.tree-leave-active {
-    transition: all .5s ease;
 }
 </style>

@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import TheHeader from '@/components/layout/TheHeader.vue'
 import BaseBreadcrumbs from '@/components/ui/BaseBreadcrumbs.vue'
-import { useAuthStore } from '@/stores/auth.ts'
+import { useAuthStore } from '@/stores/auth'
 import { watch } from 'vue'
 
 const auth = useAuthStore()

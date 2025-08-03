@@ -4,8 +4,8 @@
     </div>
 </template>
 
-<script setup>
-const props = defineProps({
+<script setup lang="ts">
+const { type } = defineProps({
     type: {
         type: String,
         default: 'info'
