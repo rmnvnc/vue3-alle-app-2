@@ -1,6 +1,6 @@
 import { db } from '@/firebase'
 import { TreeLogEntry } from '@/types/log'
-import { Tree, TreeUpdate, TreeWithLogs } from '@/types/tree'
+import { Tree, TreeWithLogs } from '@/types/tree'
 import {
     addDoc,
     collection,

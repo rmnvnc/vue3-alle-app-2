@@ -1,10 +1,9 @@
-import { ref, computed, reactive } from 'vue'
+import { computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import { serverTimestamp, Timestamp } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { Timestamp } from 'firebase/firestore'
 import { generateSlug, generateRandomId } from '@/utils/id'
 import { useAuthStore } from '@/stores/auth'
-import { createLogEntry, TreeLogEntry } from '@/types/log.js'
+import { createLogEntry } from '@/types/log.js'
 import type { LogType } from '@/types/log.js'
 import type { Tree, TreeWithLogs } from '@/types/tree.js'
 import {
