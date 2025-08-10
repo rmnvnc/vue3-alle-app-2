@@ -15,11 +15,7 @@ interface Props {
     to?: string
 }
 
-const { mode, link, to } = withDefaults(defineProps<Props>(), {
-    mode: null,
-    link: false,
-    to: '/'
-})
+const { mode = null, link = false, to = '/' } = defineProps<Props>()
 </script>
 
 <style scoped>
