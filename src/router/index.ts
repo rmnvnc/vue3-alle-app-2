@@ -28,36 +28,13 @@ const router = createRouter({
     routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
     const auth = useAuthStore()
-
-    if (!auth.isReady) {
-        const unwatch = auth.$subscribe((_, state) => {
-            if (state.isReady) {
-                unwatch()
-                proceed()
-            }
-        })
-    } else {
-        proceed()
+    if (to.meta.requiresAuth && !auth.isLoggedIn) {
+        if (to.fullPath === '/') return { name: 'login', replace: true }
+        return { name: 'login', query: { redirect: to.fullPath }, replace: true }
     }
-
-    function proceed() {
-        if (!to.meta.requiresAuth) {
-            return next()
-        }
-        if (!auth.user) {
-            if (to.fullPath === '/') {
-                return next({ name: 'login', replace: true })
-            }
-            return next({
-                name: 'login',
-                query: { redirect: to.fullPath },
-                replace: true,
-            })
-        }
-        next()
-    }
+    return true
 })
 
 export default router

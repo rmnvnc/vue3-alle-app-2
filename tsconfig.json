@@ -12,7 +12,10 @@
     "useDefineForClassFields": true,
     "baseUrl": ".",
     "paths": { "@/*": ["src/*"] },
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
 }

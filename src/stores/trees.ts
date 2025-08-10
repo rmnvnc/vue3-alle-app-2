@@ -158,7 +158,7 @@ export const useTreesStore = defineStore('trees', () => {
             type: logType,
             by: auth.fullName,
             byId: auth.user?.uid || '',
-            prevWateredUntil: prevDetail.wateredUntil,
+            prevWateredUntil: prevDetail.wateredUntil || null,
             newWateredUntil: updateFields.wateredUntil,
         })
 
@@ -177,7 +177,7 @@ export const useTreesStore = defineStore('trees', () => {
             // rollback
             Object.assign(metaDetail.data, prevDetail)
             if (prevOrchardEntry) {
-                prevOrchardEntry.wateredUntil = prevDetail.wateredUntil
+                prevOrchardEntry.wateredUntil = prevDetail.wateredUntil || null
             }
             throw err
         }
