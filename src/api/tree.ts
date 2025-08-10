@@ -15,23 +15,19 @@ import {
     Timestamp,
     updateDoc,
 } from 'firebase/firestore'
+import { treeConverter, logConverter } from './converters'
 
-export async function fetchTreesFromFirestore(orgId: string, orchardId: string) {
-    const treeSnap = await getDocs(
-        collection(db, 'organizations', orgId, 'orchards', orchardId, 'trees'),
-    )
-    return treeSnap.docs.map((doc) => {
-        const data = doc.data()
-        return {
-            id: doc.id,
-            name: data.name,
-            slug: data.slug,
-            wateredUntil: data.wateredUntil ?? null,
-            owner: data.owner ?? null,
-            variety: data.variety ?? null,
-            createdAt: data.createdAt ?? null,
-        }
-    }) as Tree[]
+export async function fetchTreesFromFirestore(orgId: string, orchardId: string): Promise<Tree[]> {
+    const colRef = collection(
+        db,
+        'organizations',
+        orgId,
+        'orchards',
+        orchardId,
+        'trees',
+    ).withConverter(treeConverter)
+    const snap = await getDocs(colRef)
+    return snap.docs.map((d) => d.data())
 }
 
 export async function fetchTreeWithLogs(
@@ -39,51 +35,53 @@ export async function fetchTreeWithLogs(
     orchardId: string,
     treeId: string,
 ): Promise<TreeWithLogs> {
-    const treeRef = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
-    const snap = await getDoc(treeRef)
-    if (!snap.exists()) throw new Error('Tree not found')
-    const treeData = snap.data() as Omit<Tree, 'id'>
-    const tree: Tree = { id: snap.id, ...treeData }
+    const treeRef = doc(
+        db,
+        'organizations',
+        orgId,
+        'orchards',
+        orchardId,
+        'trees',
+        treeId,
+    ).withConverter(treeConverter)
+    const treeSnap = await getDoc(treeRef)
+    if (!treeSnap.exists()) throw new Error('Tree not found')
 
-    const logsRef = collection(treeRef, 'logs')
-    const q = query(logsRef, orderBy('loggedAt', 'desc'), limit(5))
-    const logSnap = await getDocs(q)
-
-    const logs: TreeLogEntry[] = logSnap.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<TreeLogEntry, 'id'>),
-    }))
-
-    return {
-        ...tree,
-        logs,
-    }
+    const logsCol = collection(treeRef, 'logs').withConverter(logConverter)
+    const logsSnap = await getDocs(query(logsCol, orderBy('loggedAt', 'desc'), limit(50)))
+    return { ...treeSnap.data(), logs: logsSnap.docs.map((d) => d.data()) }
 }
 
 export async function addTreeToFirestore(
     orgId: string,
     orchardId: string,
     treeId: string,
-    tree: Tree,
+    tree: Omit<Tree, 'createdAt' | 'updatedAt'>,
 ) {
-    const ref = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
+    const ref = doc(
+        db,
+        'organizations',
+        orgId,
+        'orchards',
+        orchardId,
+        'trees',
+        treeId,
+    ).withConverter(treeConverter)
     await setDoc(ref, {
         ...tree,
         createdAt: serverTimestamp(),
-    })
+        updatedAt: serverTimestamp(),
+    } as unknown as Tree)
 }
 
 export async function updateTreeInFirestore(
     orgId: string,
     orchardId: string,
     treeId: string,
-    fields: TreeUpdate,
+    update: Partial<Tree>,
 ) {
     const ref = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
-    await updateDoc(ref, {
-        ...fields,
-        updatedAt: serverTimestamp(),
-    })
+    await updateDoc(ref, { ...update, updatedAt: serverTimestamp() })
 }
 
 export async function addTreeLog(

@@ -94,8 +94,8 @@ export const useTreesStore = defineStore('trees', () => {
             owner: data.treeOwner,
             wateredUntil: null,
             createdBy: auth.fullName || 'user',
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
         }
 
         // optimistic update
