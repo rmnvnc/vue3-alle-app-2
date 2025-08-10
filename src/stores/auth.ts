@@ -29,7 +29,7 @@ export const useAuthStore = defineStore('auth', () => {
     function initAuth() {
         watchAuthState(async (firebaseUser) => {
             user.value = firebaseUser
-
+            isReady.value = true
             if (firebaseUser) {
                 const data = await getUserData(firebaseUser.uid)
                 if (data) {
@@ -37,7 +37,6 @@ export const useAuthStore = defineStore('auth', () => {
                     roleLevel.value = data.roleLevel
                 }
             }
-            isReady.value = true
         })
     }
 

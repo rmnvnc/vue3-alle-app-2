@@ -23,3 +23,5 @@ export interface Tree {
 export interface TreeWithLogs extends Tree {
     logs: TreeLogEntry[]
 }
+
+export type TreeUpdate = Partial<Pick<Tree, 'name' | 'slug' | 'wateredUntil' | 'updatedAt'>>

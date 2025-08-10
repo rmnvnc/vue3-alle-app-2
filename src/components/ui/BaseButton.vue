@@ -1,8 +1,8 @@
 <template>
-    <button v-if="!link" :class="mode">
+    <button v-if="!link" :type="type" :disabled="disabled">
         <slot></slot>
     </button>
-    <router-link v-else :to="to" :class="mode">
+    <router-link v-else :to="to" :aria-disabled="disabled ? 'true' : undefined">
         <slot></slot>
     </router-link>
 </template>
@@ -10,12 +10,13 @@
 <script setup lang="ts">
 
 interface Props {
-    mode?: string | null
     link?: boolean
     to?: string
+    type?: 'button' | 'submit'
+    disabled?: boolean
 }
 
-const { mode = null, link = false, to = '/' } = defineProps<Props>()
+const { link = false, to = '/', type = 'button', disabled = false } = defineProps<Props>()
 </script>
 
 <style scoped>

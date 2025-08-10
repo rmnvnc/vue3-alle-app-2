@@ -1,6 +1,6 @@
 import { db } from '@/firebase'
 import { TreeLogEntry } from '@/types/log'
-import { Tree, TreeWithLogs } from '@/types/tree'
+import { Tree, TreeUpdate, TreeWithLogs } from '@/types/tree'
 import {
     addDoc,
     collection,
@@ -77,7 +77,7 @@ export async function updateTreeInFirestore(
     orgId: string,
     orchardId: string,
     treeId: string,
-    fields: Record<string, any>,
+    fields: TreeUpdate,
 ) {
     const ref = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
     await updateDoc(ref, {
