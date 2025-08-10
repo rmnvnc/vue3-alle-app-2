@@ -13,8 +13,8 @@ export interface TreeLogEntry {
 
 export function createLogEntry(params: {
     type: LogType
-    by: string
-    byId: string
+    by: string | null
+    byId: string | null
     prevWateredUntil?: Timestamp | null
     newWateredUntil?: Timestamp | null
 }): TreeLogEntry {

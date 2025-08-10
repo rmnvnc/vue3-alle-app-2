@@ -10,9 +10,9 @@ export interface Tree {
     slug: string
     type: 'tree'
     createdBy: string
-    createdAt: Timestamp
-    updatedAt: Timestamp
-    wateredUntil?: Timestamp
+    createdAt: Timestamp | Date
+    updatedAt: Timestamp | Date
+    wateredUntil?: Timestamp | null
     owner: string | null
     variety: string | null
 }
