@@ -1,8 +1,8 @@
 <template>
-    <button v-if="!link" :type="type" :disabled="disabled">
+    <button v-if="!link" :type="type" :disabled="disabled" :tabindex="disabled ? '-1' : '0'">
         <slot></slot>
     </button>
-    <router-link v-else :to="to" :aria-disabled="disabled ? 'true' : undefined">
+    <router-link v-else :to="to" :aria-disabled="disabled ? 'true' : undefined" :tabindex="disabled ? '-1' : '0'">
         <slot></slot>
     </router-link>
 </template>

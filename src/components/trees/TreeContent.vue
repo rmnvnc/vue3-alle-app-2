@@ -1,5 +1,5 @@
 <template>
-    <base-toast :show="waterringError" @close="waterringError = false" message="Nastala chyba pri zalievaní"
+    <base-toast :show="wateringError" @close="wateringError = false" message="Nastala chyba pri zalievaní"
         type="error" />
     <base-toast :show="showToast" @close="showToast = false" message="Strom úspešne zaliaty" type="success" />
     <template v-if="fetchError">
@@ -17,7 +17,7 @@
             <br>
         </template>
         {{ remainingText }}
-        <base-button @click="waterTreeNow()" :disabled="buttonCooldown || waterringError || !auth.canWater"
+        <base-button @click="waterTreeNow()" :disabled="buttonCooldown || wateringError || !auth.canWater"
             class="add-tree">Zaliať
             strom</base-button>
         <tree-logs :logs="recentLogs" />
@@ -58,7 +58,7 @@ const recentLogs = computed<TreeLogEntry[]>(() => {
 
 const showToast = ref(false)
 const buttonCooldown = ref(false)
-const waterringError = ref(false)
+const wateringError = ref(false)
 
 async function waterTreeNow(): Promise<void> {
     showToast.value = false
@@ -71,7 +71,7 @@ async function waterTreeNow(): Promise<void> {
             buttonCooldown.value = false
         }, 10000)
     } catch (error) {
-        waterringError.value = true
+        wateringError.value = true
     }
 }
 </script>

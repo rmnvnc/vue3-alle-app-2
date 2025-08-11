@@ -2,8 +2,7 @@
     <teleport to="body">
         <div v-if="show" @click="tryClose" class="backdrop"></div>
         <transition name="dialog">
-            <dialog open v-if="show" class="dialog">
-
+            <dialog open v-if="show" class="dialog" role="dialog" aria-modal="true">
                 <section class="dialog__header">
                     <slot name="header">
                         <h2>{{ title }}</h2>
