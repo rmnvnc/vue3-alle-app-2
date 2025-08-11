@@ -1,13 +1,13 @@
 <template>
     <form @submit.prevent="loginForm">
         <div class="form-control" v-if="error">
-            <p class="error">{{ error }}</p>
+            <p class="error" role="alert">{{ error }}</p>
         </div>
         <div v-for="(field, key) in formSetup" :key="key" class="form-control" :class="{ invalid: !field.isValid }">
             <label :for="`field-${key}`"> {{ field.label }}</label>
-            <p v-if="!field.isValid" class="invalid-message">{{ field.label }} je povinné pole</p>
-            <input type="text" :id="`field-${key}`" v-model.trim="field.val" @blur="validateField(key)"
-                :disabled="formLoading">
+            <p v-if="!field.isValid" :id="`err-${key}`" class="invalid-message">{{ field.label }} je povinné pole</p>
+            <input :id="`field-${key}`" :name="`${key}`" v-model.trim="field.val" @blur="validateField(key)"
+                :disabled="formLoading" :type="field.type" :required="field.isRequired" :aria-invalid="!field.isValid">
         </div>
         <base-button type="submit" :disabled="formLoading">
             {{ formLoading ? 'Prihlasujem...' : 'Prihlásiť' }}
@@ -29,13 +29,15 @@ const formSetup = reactive({
         label: 'E-mail',
         val: '',
         isValid: true,
-        isRequired: true
+        isRequired: true,
+        type: 'email'
     },
     password: {
         label: 'Heslo',
         val: '',
         isValid: true,
-        isRequired: true
+        isRequired: true,
+        type: 'password'
     }
 })
 
