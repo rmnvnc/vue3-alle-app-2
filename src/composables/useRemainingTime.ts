@@ -6,10 +6,10 @@ export function useRemainingTime(wateredUntil: ComputedRef<Timestamp | null>) {
         const raw = unref(wateredUntil)
         if (!raw) return { text: 'Ešte nezaliaty', days: null }
 
-        const targetDate = raw instanceof Timestamp ? raw.toDate() : new Date(raw)
+        const targetDate = raw.toDate()
 
-        const now = new Date()
-        const diffMs = targetDate.getTime() - now.getTime()
+        const now = Timestamp.now()
+        const diffMs = targetDate.getTime() - now.toMillis()
 
         const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 

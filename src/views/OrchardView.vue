@@ -52,13 +52,9 @@ const trees = computed(() => {
             const bHasWater = b.wateredUntil != null
 
             if (!aHasWater && !bHasWater) {
-                const aMs = a.createdAt instanceof Date
-                    ? a.createdAt.getTime()
-                    : a.createdAt?.toMillis?.() ?? 0
+                const aMs = a.createdAt?.toMillis?.() ?? 0
 
-                const bMs = b.createdAt instanceof Date
-                    ? b.createdAt.getTime()
-                    : b.createdAt?.toMillis?.() ?? 0
+                const bMs = b.createdAt?.toMillis?.() ?? 0
 
                 return bMs - aMs
             }

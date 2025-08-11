@@ -24,8 +24,10 @@ export const useTreesStore = defineStore('trees', () => {
     const CACHE_TTL = 5 * 60 * 1000
 
     // === CACHE
-    const treesForOrchardCache = reactive(new Map<string, { data: Tree[]; fetchedAt: number }>())
-    const treesDetailCache = reactive(new Map<string, { data: TreeWithLogs; fetchedAt: number }>())
+    const treesForOrchardCache = reactive(new Map<string, { data: Tree[]; fetchedAt: Timestamp }>())
+    const treesDetailCache = reactive(
+        new Map<string, { data: TreeWithLogs; fetchedAt: Timestamp }>(),
+    )
 
     // === GETTERS
     function getTreesForOrchard(id: string) {
@@ -43,10 +45,10 @@ export const useTreesStore = defineStore('trees', () => {
     // === ACTIONS
 
     async function fetchTrees(orgId: string, orchardId: string) {
-        const now = Date.now()
+        const now = Timestamp.now().toMillis()
         const cache = treesForOrchardCache.get(orchardId)
 
-        if (cache && now - cache.fetchedAt < CACHE_TTL) {
+        if (cache && now - cache.fetchedAt.toMillis() < CACHE_TTL) {
             console.log('[♻️] cached Orchard trees')
             return
         }
@@ -55,15 +57,15 @@ export const useTreesStore = defineStore('trees', () => {
         const trees = await fetchTreesFromFirestore(orgId, orchardId)
         treesForOrchardCache.set(orchardId, {
             data: trees,
-            fetchedAt: now,
+            fetchedAt: Timestamp.now(),
         })
     }
 
     async function fetchTree(orgId: string, orchardId: string, treeId: string) {
-        const now = Date.now()
+        const now = Timestamp.now().toMillis()
         const cache = getTreeMeta(treeId)
 
-        if (cache && now - cache.fetchedAt < CACHE_TTL) {
+        if (cache && now - cache.fetchedAt.toMillis() < CACHE_TTL) {
             console.log('[♻️] cached Tree')
             return
         }
@@ -72,7 +74,7 @@ export const useTreesStore = defineStore('trees', () => {
         const treeWithLogs = await fetchTreeWithLogs(orgId, orchardId, treeId)
         treesDetailCache.set(treeId, {
             data: treeWithLogs,
-            fetchedAt: now,
+            fetchedAt: Timestamp.now(),
         })
     }
 
@@ -102,7 +104,7 @@ export const useTreesStore = defineStore('trees', () => {
         const oldList = prev?.data || []
         treesForOrchardCache.set(orchardId, {
             data: [...oldList, newTree],
-            fetchedAt: Date.now(),
+            fetchedAt: Timestamp.now(),
         })
 
         const logEntry = createLogEntry({
@@ -116,7 +118,7 @@ export const useTreesStore = defineStore('trees', () => {
             await addTreeLog(orgId, orchardId, treeId, logEntry)
         } catch (err) {
             //rollback
-            treesForOrchardCache.set(orchardId, { data: oldList, fetchedAt: Date.now() })
+            treesForOrchardCache.set(orchardId, { data: oldList, fetchedAt: Timestamp.now() })
             throw err
         }
     }
@@ -125,12 +127,14 @@ export const useTreesStore = defineStore('trees', () => {
         orgId: string,
         orchardId: string,
         treeId: string,
-        currentWateredUntil: { toDate: () => Date },
+        currentWateredUntil: Timestamp,
     ) {
-        const now = new Date()
-        const currentDate = currentWateredUntil?.toDate?.() ?? now
-        const nextWatering = getNextWateringDate(currentDate)
-
+        const now = Timestamp.now()
+        const base =
+            currentWateredUntil && currentWateredUntil.toMillis() > now.toMillis()
+                ? currentWateredUntil
+                : now
+        const nextWatering = getNextWateringDate(base)
         await updateTreeData(orgId, orchardId, treeId, 'MANUAL_WATERING', {
             wateredUntil: nextWatering,
         })

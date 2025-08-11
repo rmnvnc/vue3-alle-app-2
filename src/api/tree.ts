@@ -103,8 +103,7 @@ export async function addTreeLog(
     await addDoc(logsCol, log)
 }
 
-export function getNextWateringDate(fromDate: Date | Timestamp): Timestamp {
-    const base = fromDate instanceof Timestamp ? fromDate.toDate() : fromDate
-    const nextDate = new Date(base.getTime() + 14 * 24 * 60 * 60 * 1000)
-    return Timestamp.fromDate(nextDate)
+export function getNextWateringDate(fromDate: Timestamp): Timestamp {
+    const nextMillis = fromDate.toMillis() + 14 * 24 * 60 * 60 * 1000 // +14 dní
+    return Timestamp.fromMillis(nextMillis)
 }

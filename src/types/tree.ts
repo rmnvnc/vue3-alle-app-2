@@ -12,7 +12,7 @@ export interface Tree {
     createdBy: string
     createdAt: Timestamp
     updatedAt: Timestamp
-    wateredUntil?: Timestamp | null
+    wateredUntil: Timestamp | null
     owner: string | null
     variety: string | null
 }
