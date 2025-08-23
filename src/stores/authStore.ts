@@ -1,8 +1,8 @@
 import type { User } from 'firebase/auth'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { login as apiLogin, logout as apiLogout, watchAuthState } from '@/api/auth'
-import { getUserData } from '@/api/user'
+import { login as apiLogin, logout as apiLogout, watchAuthState } from '@/api/authApi'
+import { getUserData } from '@/api/userApi'
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref<User | null>(null)

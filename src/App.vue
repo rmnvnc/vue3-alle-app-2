@@ -2,7 +2,7 @@
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import TheHeader from '@/components/layout/TheHeader.vue'
 import BaseBreadcrumbs from '@/components/ui/BaseBreadcrumbs.vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/stores/authStore'
 import { watch } from 'vue'
 
 const auth = useAuthStore()

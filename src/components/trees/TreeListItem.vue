@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { useRemainingTime } from '@/composables/useRemainingTime'
 import { computed } from 'vue'
-import type { Tree } from '@/types/tree'
+import type { Tree } from '@/types/treeType'
 
 const props = defineProps<{
     tree: Tree,

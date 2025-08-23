@@ -16,12 +16,12 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import { useTreesStore } from '@/stores/trees'
-import { useAuthStore } from '@/stores/auth'
+import { useTreesStore } from '@/stores/treesStore'
+import { useAuthStore } from '@/stores/authStore'
 import TreeList from '@/components/trees/TreeList.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
 import { FirebaseError } from 'firebase/app'
-import { Tree } from '@/types/tree'
+import { Tree } from '@/types/treeType'
 
 const treesStore = useTreesStore()
 const { getTreesForOrchard, addTree, _orgId, _orchardId } = treesStore

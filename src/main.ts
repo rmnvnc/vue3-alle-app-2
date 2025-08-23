@@ -7,7 +7,7 @@ import App from '@/App.vue'
 import router from '@/router'
 
 import BaseButton from './components/ui/BaseButton.vue'
-import { useAuthStore } from './stores/auth'
+import { useAuthStore } from './stores/authStore'
 const BaseDialog = defineAsyncComponent(() => import('@/components/ui/BaseDialog.vue'))
 const BaseSpinner = defineAsyncComponent(() => import('@/components/ui/BaseSpinner.vue'))
 const BaseNotification = defineAsyncComponent(() => import('@/components/ui/BaseNotification.vue'))

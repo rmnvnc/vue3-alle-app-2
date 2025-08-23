@@ -25,12 +25,12 @@
 </template>
 
 <script setup lang="ts">
-import { useTreesStore } from '@/stores/trees'
-import { useAuthStore } from '@/stores/auth'
+import { useTreesStore } from '@/stores/treesStore'
+import { useAuthStore } from '@/stores/authStore'
 import TreeLogs from './TreeLogs.vue';
 import { ref, computed, ComputedRef } from 'vue';
 import { useRemainingTime } from '@/composables/useRemainingTime'
-import { TreeLogEntry } from '@/types/log';
+import { TreeLogEntry } from '@/types/logType';
 import { Timestamp } from 'firebase/firestore';
 
 const props = defineProps<{ treeId: string }>()

@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { TreeLogEntry } from '@/types/log';
+import { TreeLogEntry } from '@/types/logType';
 import { Timestamp } from 'firebase/firestore';
 
 defineProps<{ logs: TreeLogEntry[] }>()

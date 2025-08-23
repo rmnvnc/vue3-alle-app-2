@@ -1,11 +1,11 @@
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { Timestamp } from 'firebase/firestore'
 import { generateSlug, generateRandomId } from '@/utils/id'
-import { useAuthStore } from '@/stores/auth'
-import { createLogEntry } from '@/types/log.js'
-import type { LogType } from '@/types/log.js'
-import type { Tree, TreeWithLogs } from '@/types/tree.js'
+import { useAuthStore } from '@/stores/authStore'
+import { createLogEntry } from '@/types/logType.js'
+import type { LogType } from '@/types/logType.js'
+import type { Tree, TreeWithLogs } from '@/types/treeType.js'
 import {
     addTreeLog,
     addTreeToFirestore,
@@ -13,7 +13,7 @@ import {
     fetchTreeWithLogs,
     getNextWateringDate,
     updateTreeInFirestore,
-} from '@/api/tree'
+} from '@/api/treeApi'
 
 export const useTreesStore = defineStore('trees', () => {
     // === HARD CODED
