@@ -1,12 +1,11 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import LoginView from '@/views/LoginView.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const routes: RouteRecordRaw[] = [
     {
         path: '/login',
         name: 'login',
-        component: LoginView,
+        component: () => import('@/views/LoginView.vue'),
     },
     {
         path: '/',

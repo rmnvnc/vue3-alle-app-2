@@ -1,8 +1,7 @@
 import { db } from '@/firebase'
 import { TreeLogEntry } from '@/types/logType'
-import { Tree, TreeWithLogs } from '@/types/treeType'
+import { Tree } from '@/types/treeType'
 import {
-    addDoc,
     collection,
     doc,
     getDoc,
@@ -11,13 +10,13 @@ import {
     orderBy,
     query,
     serverTimestamp,
-    setDoc,
     Timestamp,
-    updateDoc,
+    UpdateData,
+    writeBatch,
 } from 'firebase/firestore'
 import { treeConverter, logConverter } from './converters'
 
-export async function fetchTreesFromFirestore(orgId: string, orchardId: string): Promise<Tree[]> {
+export async function apiFetchTrees(orgId: string, orchardId: string): Promise<Tree[]> {
     const colRef = collection(
         db,
         'organizations',
@@ -30,11 +29,11 @@ export async function fetchTreesFromFirestore(orgId: string, orchardId: string):
     return snap.docs.map((d) => d.data())
 }
 
-export async function fetchTreeWithLogs(
+export async function apiFetchTree(
     orgId: string,
     orchardId: string,
     treeId: string,
-): Promise<TreeWithLogs> {
+): Promise<Tree> {
     const treeRef = doc(
         db,
         'organizations',
@@ -47,49 +46,14 @@ export async function fetchTreeWithLogs(
     const treeSnap = await getDoc(treeRef)
     if (!treeSnap.exists()) throw new Error('Tree not found')
 
-    const logsCol = collection(treeRef, 'logs').withConverter(logConverter)
-    const logsSnap = await getDocs(query(logsCol, orderBy('loggedAt', 'desc'), limit(50)))
-    return { ...treeSnap.data(), logs: logsSnap.docs.map((d) => d.data()) }
+    return { ...treeSnap.data() }
 }
 
-export async function addTreeToFirestore(
+export async function apiFetchTreeLogs(
     orgId: string,
     orchardId: string,
     treeId: string,
-    tree: Omit<Tree, 'createdAt' | 'updatedAt'>,
-) {
-    const ref = doc(
-        db,
-        'organizations',
-        orgId,
-        'orchards',
-        orchardId,
-        'trees',
-        treeId,
-    ).withConverter(treeConverter)
-    await setDoc(ref, {
-        ...tree,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-    } as unknown as Tree)
-}
-
-export async function updateTreeInFirestore(
-    orgId: string,
-    orchardId: string,
-    treeId: string,
-    update: Partial<Tree>,
-) {
-    const ref = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
-    await updateDoc(ref, { ...update, updatedAt: serverTimestamp() })
-}
-
-export async function addTreeLog(
-    orgId: string,
-    orchardId: string,
-    treeId: string,
-    log: TreeLogEntry,
-) {
+): Promise<TreeLogEntry[]> {
     const logsCol = collection(
         db,
         'organizations',
@@ -99,11 +63,71 @@ export async function addTreeLog(
         'trees',
         treeId,
         'logs',
-    )
-    await addDoc(logsCol, log)
+    ).withConverter(logConverter)
+    const logsSnap = await getDocs(query(logsCol, orderBy('loggedAt', 'desc'), limit(5)))
+    return logsSnap.docs.map((d) => d.data())
 }
 
 export function getNextWateringDate(fromDate: Timestamp): Timestamp {
     const nextMillis = fromDate.toMillis() + 14 * 24 * 60 * 60 * 1000 // +14 dní
     return Timestamp.fromMillis(nextMillis)
+}
+
+export async function apiUpdateTreeAndLog(
+    orgId: string,
+    orchardId: string,
+    treeId: string,
+    update: UpdateData<Tree>,
+    log: TreeLogEntry,
+) {
+    const batch = writeBatch(db)
+
+    const treeRef = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
+    const logRef = doc(collection(treeRef, 'logs'))
+
+    batch.update(treeRef, {
+        ...update,
+        updatedAt: serverTimestamp(),
+    } as UpdateData<Tree>)
+
+    batch.set(logRef, {
+        ...log,
+        loggedAt: serverTimestamp(),
+    })
+
+    await batch.commit()
+}
+
+export async function apiCreateTreeAndLog(
+    orgId: string,
+    orchardId: string,
+    treeId: string,
+    data: Tree,
+    log: TreeLogEntry,
+) {
+    const batch = writeBatch(db)
+
+    const treeRef = doc(
+        db,
+        'organizations',
+        orgId,
+        'orchards',
+        orchardId,
+        'trees',
+        treeId,
+    ).withConverter(treeConverter)
+
+    const logRef = doc(collection(treeRef, 'logs'))
+
+    batch.set(treeRef, {
+        ...data,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    })
+    batch.set(logRef, {
+        ...log,
+        loggedAt: serverTimestamp(),
+    })
+
+    await batch.commit()
 }

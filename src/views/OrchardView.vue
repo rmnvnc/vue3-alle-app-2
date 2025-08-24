@@ -4,13 +4,12 @@
         <base-dialog title="Pridať strom" :show="showTreeForm" @close="handleTreeForm">
             <tree-form @save-data="saveData" :form-loading="formLoading" :form-error="formError" />
         </base-dialog>
-        <base-spinner v-if="loading"></base-spinner>
-        <div v-else-if="error">Error: {{ error }}</div>
-        <div v-else>
-            <h1>Orchard: {{ _orchardId }}</h1>
-            <base-button @click="handleTreeForm" :disabled="!auth.canEdit">Pridať strom</base-button>
-            <tree-list :items="trees"></tree-list>
-        </div>
+
+        <h1>Orchard: {{ _orchardId }}</h1>
+        <base-button @click="handleTreeForm" :disabled="!auth.canEdit || error != ''">Pridať strom</base-button>
+        <div v-if="error">Error: {{ error }}</div>
+        <base-spinner v-else-if="loading"></base-spinner>
+        <tree-list v-else :items="trees"></tree-list>
     </main>
 </template>
 
@@ -24,7 +23,7 @@ import { FirebaseError } from 'firebase/app'
 import { Tree } from '@/types/treeType'
 
 const treesStore = useTreesStore()
-const { getTreesForOrchard, addTree, _orgId, _orchardId } = treesStore
+const { createTree, _orgId, _orchardId, listByOrchard } = treesStore
 
 const auth = useAuthStore()
 
@@ -45,23 +44,18 @@ onMounted(async () => {
 })
 
 const trees = computed(() => {
-    return getTreesForOrchard(_orchardId)
+    return listByOrchard(_orchardId)
         .slice()
         .sort((a: Tree, b: Tree) => {
             const aHasWater = a.wateredUntil != null
             const bHasWater = b.wateredUntil != null
-
             if (!aHasWater && !bHasWater) {
                 const aMs = a.createdAt?.toMillis?.() ?? 0
-
                 const bMs = b.createdAt?.toMillis?.() ?? 0
-
                 return bMs - aMs
             }
-
             if (!aHasWater) return -1
             if (!bHasWater) return 1
-
             return a.wateredUntil!.toMillis() - b.wateredUntil!.toMillis()
         })
 })
@@ -77,12 +71,12 @@ const formLoading = ref(false)
 const showToast = ref(false)
 const formError = ref('')
 
-async function saveData(data: { treeName: string; treeVariety: string; treeOwner: string }) {
+async function saveData(data: { name: string; variety: string; owner: string }) {
     formLoading.value = true
     showToast.value = false
     formError.value = ''
     try {
-        await addTree(_orgId, _orchardId, data)
+        await createTree(_orgId, _orchardId, data)
         handleTreeForm()
         showToast.value = true
     } catch (e) {
