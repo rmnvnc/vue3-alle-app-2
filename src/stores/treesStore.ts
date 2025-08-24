@@ -1,6 +1,5 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { Timestamp } from 'firebase/firestore'
 import { generateSlug, generateRandomId } from '@/utils/id'
 import { useAuthStore } from '@/stores/authStore'
 import { createLogEntry } from '@/types/logType.js'
@@ -52,12 +51,13 @@ export const useTreesStore = defineStore('trees', () => {
         const list = await apiFetchTrees(orgId, orchardId)
         const now = Date.now()
 
+        const patch: Record<string, TreeEntity> = {}
         for (const t of list) {
-            entities.value[t.id] = {
-                data: t,
-                hydratation: 'full',
-                fetchedAt: now,
-            }
+            patch[t.id] = { data: t, hydratation: 'full', fetchedAt: now }
+        }
+
+        if (Object.keys(patch).length) {
+            entities.value = { ...entities.value, ...patch }
         }
 
         indexByOrchard.value[orchardId] = {
@@ -112,14 +112,14 @@ export const useTreesStore = defineStore('trees', () => {
         const prevUpdated = tree.data.updatedAt
 
         //Optimistic local tree update
+        const { Timestamp } = await import('firebase/firestore')
         const now = Timestamp.now()
         const currentWatered =
             tree.data.wateredUntil && tree.data.wateredUntil.toMillis() > now.toMillis()
                 ? tree.data.wateredUntil
                 : now
         const nextWatering = getNextWateringDate(currentWatered)
-        tree.data.wateredUntil = nextWatering
-        tree.data.updatedAt = Timestamp.now()
+        tree.data = { ...tree.data, wateredUntil: nextWatering, updatedAt: now }
 
         //Optimistic local log update
         const logs = logsByTreeId.value[treeId]?.items ?? []
@@ -127,7 +127,7 @@ export const useTreesStore = defineStore('trees', () => {
             type: 'MANUAL_WATERING',
             by: auth.fullName,
             byId: auth.user?.uid || '',
-            prevWateredUntil: tree.data.wateredUntil,
+            prevWateredUntil: prevWatered,
             newWateredUntil: nextWatering,
         })
         logsByTreeId.value[treeId] = {
@@ -146,8 +146,7 @@ export const useTreesStore = defineStore('trees', () => {
             )
         } catch (e) {
             // Revert tree update
-            tree.data.wateredUntil = prevWatered
-            tree.data.updatedAt = prevUpdated
+            tree.data = { ...tree.data, wateredUntil: prevWatered, updatedAt: prevUpdated }
 
             const logState = logsByTreeId.value[treeId]
             if (logState?.items?.length && (logState.items[0] as any).id === undefined) {
@@ -164,6 +163,8 @@ export const useTreesStore = defineStore('trees', () => {
     ) {
         const treeSlug = generateSlug(data.name)
         const treeId = generateRandomId()
+        const { Timestamp } = await import('firebase/firestore')
+        const now = Timestamp.now()
 
         const newTree: Tree = {
             id: treeId,
@@ -174,8 +175,8 @@ export const useTreesStore = defineStore('trees', () => {
             owner: data.owner,
             wateredUntil: null,
             createdBy: auth.fullName || 'user',
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
+            createdAt: now,
+            updatedAt: now,
         }
 
         // Optimistic update tree
