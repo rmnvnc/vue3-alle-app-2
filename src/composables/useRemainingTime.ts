@@ -1,5 +1,6 @@
-import { computed, ComputedRef, unref } from 'vue'
-import { Timestamp } from 'firebase/firestore'
+import { computed, unref } from 'vue'
+import type { ComputedRef } from 'vue'
+import { Timestamp } from 'firebase/firestore/lite'
 
 export function useRemainingTime(wateredUntil: ComputedRef<Timestamp | null>) {
     const remaining = computed(() => {

@@ -1,6 +1,6 @@
 <template>
     <form @submit.prevent="submitForm">
-        <base-notification v-if="!formLoading && formError" :type="{ 'error': formError }">
+        <base-notification v-if="!formLoading && props.formError" type="error">
             {{ formError }}
         </base-notification>
         <div v-for="(field, key) in formSetup" :key="key" class="form-control" :class="{ invalid: !field.isValid }">
@@ -32,19 +32,19 @@ const isFormValid = computed(() =>
 )
 
 const formSetup = reactive({
-    treeName: {
+    name: {
         label: 'Názov stromu',
         val: '',
         isValid: true,
         isRequired: true
     },
-    treeVariety: {
+    variety: {
         label: 'Odroda stromu',
         val: '',
         isValid: true,
         isRequired: false
     },
-    treeOwner: {
+    owner: {
         label: 'Majiteľ stromu',
         val: '',
         isValid: true,

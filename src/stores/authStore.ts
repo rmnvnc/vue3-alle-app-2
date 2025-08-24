@@ -6,7 +6,7 @@ import { getUserData } from '@/api/userApi'
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref<User | null>(null)
-    const fullName = ref<string | null>(null)
+    const fullName = ref<string>('')
     const roleLevel = ref(0)
     const isReady = ref(false)
     const isLoggedIn = computed(() => !!user.value)
@@ -22,7 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function logout() {
         await apiLogout()
         user.value = null
-        fullName.value = null
+        fullName.value = ''
         roleLevel.value = 0
     }
 
