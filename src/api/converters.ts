@@ -1,6 +1,6 @@
 import { TreeLogEntry } from '@/types/logType'
 import { Tree } from '@/types/treeType'
-import { FirestoreDataConverter, Timestamp } from 'firebase/firestore'
+import { FirestoreDataConverter } from 'firebase/firestore'
 
 export const treeConverter: FirestoreDataConverter<Tree> = {
     toFirestore(t) {

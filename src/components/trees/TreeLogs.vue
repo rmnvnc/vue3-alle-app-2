@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
 import { useTreesStore } from '@/stores/treesStore'
 import { computed, onMounted, ref } from 'vue';
 
