@@ -20,7 +20,7 @@ import { useAuthStore } from '@/stores/authStore'
 import TreeList from '@/components/trees/TreeList.vue'
 import TreeForm from '@/components/trees/TreeForm.vue'
 import { FirebaseError } from 'firebase/app'
-import { Tree } from '@/types/treeType'
+import type { Tree } from '@/types/treeType'
 
 const treesStore = useTreesStore()
 const { createTree, _orgId, _orchardId, listByOrchard } = treesStore

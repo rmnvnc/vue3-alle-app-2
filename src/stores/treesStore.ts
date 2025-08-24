@@ -5,14 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { createLogEntry } from '@/types/logType.js'
 import type { TreeLogsState } from '@/types/logType.js'
 import type { Tree, TreeEntity, TreeIndex } from '@/types/treeType.js'
-import {
-    apiFetchTree,
-    apiFetchTreeLogs,
-    apiFetchTrees,
-    getNextWateringDate,
-    apiUpdateTreeAndLog,
-    apiCreateTreeAndLog,
-} from '@/api/treeApi'
+import { acceptHMRUpdate } from 'pinia'
 
 export const useTreesStore = defineStore('trees', () => {
     const auth = useAuthStore()
@@ -47,6 +40,7 @@ export const useTreesStore = defineStore('trees', () => {
         const shouldFetch = options.force || !idx || isStale(idx.fetchedAt)
 
         if (!shouldFetch) return
+        const { apiFetchTrees } = await import('@/api/treeApi')
 
         const list = await apiFetchTrees(orgId, orchardId)
         const now = Date.now()
@@ -77,7 +71,7 @@ export const useTreesStore = defineStore('trees', () => {
         const stale = !ent || isStale(ent.fetchedAt)
 
         if (!options.force && !(needsHydratation || stale)) return
-
+        const { apiFetchTree } = await import('@/api/treeApi')
         const full = await apiFetchTree(orgId, orchardId, treeId)
 
         const now = Date.now()
@@ -97,7 +91,7 @@ export const useTreesStore = defineStore('trees', () => {
         const logsState = logsByTreeId.value[treeId]
         const should = options.force || !logsState || isStale(logsState.fetchedAt)
         if (!should) return
-
+        const { apiFetchTreeLogs } = await import('@/api/treeApi')
         const logs = await apiFetchTreeLogs(orgId, orchardId, treeId)
         logsByTreeId.value[treeId] = { items: logs, fetchedAt: Date.now() }
     }
@@ -107,12 +101,14 @@ export const useTreesStore = defineStore('trees', () => {
 
         if (!tree) return
 
+        const { getNextWateringDate, apiUpdateTreeAndLog } = await import('@/api/treeApi')
+
         // Minimal snapshot as a backup for failed DB update
         const prevWatered = tree.data.wateredUntil
         const prevUpdated = tree.data.updatedAt
 
         //Optimistic local tree update
-        const { Timestamp } = await import('firebase/firestore')
+        const { Timestamp } = await import('firebase/firestore/lite')
         const now = Timestamp.now()
         const currentWatered =
             tree.data.wateredUntil && tree.data.wateredUntil.toMillis() > now.toMillis()
@@ -163,7 +159,8 @@ export const useTreesStore = defineStore('trees', () => {
     ) {
         const treeSlug = generateSlug(data.name)
         const treeId = generateRandomId()
-        const { Timestamp } = await import('firebase/firestore')
+        const { Timestamp } = await import('firebase/firestore/lite')
+        const { apiCreateTreeAndLog } = await import('@/api/treeApi')
         const now = Timestamp.now()
 
         const newTree: Tree = {
@@ -221,6 +218,10 @@ export const useTreesStore = defineStore('trees', () => {
 
             throw e
         }
+    }
+
+    if (import.meta.hot) {
+        import.meta.hot.accept(acceptHMRUpdate(useTreesStore, import.meta.hot))
     }
 
     return {

@@ -1,22 +1,12 @@
-import { db } from '@/firebase'
-import { TreeLogEntry } from '@/types/logType'
-import { Tree } from '@/types/treeType'
-import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    limit,
-    orderBy,
-    query,
-    serverTimestamp,
-    Timestamp,
-    UpdateData,
-    writeBatch,
-} from 'firebase/firestore'
+import { getDb } from '@/firebase'
+import type { TreeLogEntry } from '@/types/logType'
+import type { Tree } from '@/types/treeType'
+import type { UpdateData, Timestamp } from 'firebase/firestore/lite'
 import { treeConverter, logConverter } from './converters'
 
 export async function apiFetchTrees(orgId: string, orchardId: string): Promise<Tree[]> {
+    const { collection, getDocs } = await import('firebase/firestore/lite')
+    const db = await getDb()
     const colRef = collection(
         db,
         'organizations',
@@ -34,6 +24,8 @@ export async function apiFetchTree(
     orchardId: string,
     treeId: string,
 ): Promise<Tree> {
+    const { doc, getDoc } = await import('firebase/firestore/lite')
+    const db = await getDb()
     const treeRef = doc(
         db,
         'organizations',
@@ -54,6 +46,8 @@ export async function apiFetchTreeLogs(
     orchardId: string,
     treeId: string,
 ): Promise<TreeLogEntry[]> {
+    const { collection, query, getDocs, orderBy, limit } = await import('firebase/firestore/lite')
+    const db = await getDb()
     const logsCol = collection(
         db,
         'organizations',
@@ -69,8 +63,9 @@ export async function apiFetchTreeLogs(
 }
 
 export function getNextWateringDate(fromDate: Timestamp): Timestamp {
-    const nextMillis = fromDate.toMillis() + 14 * 24 * 60 * 60 * 1000 // +14 dní
-    return Timestamp.fromMillis(nextMillis)
+    const nextMs = fromDate.toMillis() + 14 * 24 * 60 * 60 * 1000 // +14 dní
+    const Ctor = (fromDate as any).constructor as { fromMillis(ms: number): Timestamp }
+    return Ctor.fromMillis(nextMs)
 }
 
 export async function apiUpdateTreeAndLog(
@@ -80,6 +75,8 @@ export async function apiUpdateTreeAndLog(
     update: UpdateData<Tree>,
     log: TreeLogEntry,
 ) {
+    const { collection, writeBatch, doc, serverTimestamp } = await import('firebase/firestore/lite')
+    const db = await getDb()
     const batch = writeBatch(db)
 
     const treeRef = doc(db, 'organizations', orgId, 'orchards', orchardId, 'trees', treeId)
@@ -105,6 +102,8 @@ export async function apiCreateTreeAndLog(
     data: Tree,
     log: TreeLogEntry,
 ) {
+    const { collection, writeBatch, doc, serverTimestamp } = await import('firebase/firestore/lite')
+    const db = await getDb()
     const batch = writeBatch(db)
 
     const treeRef = doc(

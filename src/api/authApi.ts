@@ -1,15 +1,21 @@
-import { auth } from '@/firebase'
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth'
+import { getAuthInstance } from '@/firebase'
+import type { User } from 'firebase/auth'
 
 export async function login(email: string, password: string) {
-    const result = await signInWithEmailAndPassword(auth, email, password)
-    return result.user
+    const auth = await getAuthInstance()
+    const { signInWithEmailAndPassword } = await import('firebase/auth')
+    const cred = await signInWithEmailAndPassword(auth, email, password)
+    return cred.user
 }
 
 export async function logout() {
+    const auth = await getAuthInstance()
+    const { signOut } = await import('firebase/auth')
     await signOut(auth)
 }
 
-export function watchAuthState(callback: (user: User | null) => void) {
+export async function watchAuthState(callback: (user: User | null) => void) {
+    const auth = await getAuthInstance()
+    const { onAuthStateChanged } = await import('firebase/auth')
     return onAuthStateChanged(auth, callback)
 }

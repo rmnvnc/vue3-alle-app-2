@@ -1,13 +1,13 @@
-import { TreeLogEntry } from '@/types/logType'
-import { Tree } from '@/types/treeType'
-import { FirestoreDataConverter } from 'firebase/firestore'
+import type { TreeLogEntry } from '@/types/logType'
+import type { Tree } from '@/types/treeType'
+import type { FirestoreDataConverter, QueryDocumentSnapshot } from 'firebase/firestore/lite'
 
 export const treeConverter: FirestoreDataConverter<Tree> = {
     toFirestore(t) {
         return t
     },
-    fromFirestore(snap, options) {
-        const d = snap.data(options)
+    fromFirestore(snap: QueryDocumentSnapshot): Tree {
+        const d = snap.data() as any
         return {
             id: snap.id,
             name: d.name,
@@ -27,8 +27,8 @@ export const logConverter: FirestoreDataConverter<TreeLogEntry> = {
     toFirestore(l) {
         return l
     },
-    fromFirestore(snap, options) {
-        const d = snap.data(options)
+    fromFirestore(snap: QueryDocumentSnapshot): TreeLogEntry {
+        const d = snap.data() as any
         return {
             type: d.type,
             by: d.by,

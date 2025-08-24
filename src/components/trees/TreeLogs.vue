@@ -1,6 +1,6 @@
 <template>
     <h2>Záznam posledných aktivít</h2>
-    <div v-if="loading">
+    <div v-if="!logs.length">
         <base-spinner />
     </div>
     <ul v-else>
@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore/lite';
 import { useTreesStore } from '@/stores/treesStore'
 import { computed, onMounted, ref } from 'vue';
 
