@@ -1,6 +1,4 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
@@ -11,12 +9,21 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_APP_FIREBASE_APP_ID,
 }
 
-// Initialize Firebase App
-const firebaseApp = initializeApp(firebaseConfig)
+const app = initializeApp(firebaseConfig)
 
-const auth = getAuth(firebaseApp)
-// Get Firestore Instance
-const db = getFirestore(firebaseApp)
+let _db: import('firebase/firestore/lite').Firestore | null = null
+let _auth: import('firebase/auth').Auth | null = null
 
-// Exportuj instance, for using in components
-export { db, auth }
+export async function getDb() {
+    if (_db) return _db
+    const { getFirestore } = await import('firebase/firestore/lite')
+    _db = getFirestore(app)
+    return _db
+}
+
+export async function getAuthInstance() {
+    if (_auth) return _auth
+    const { getAuth } = await import('firebase/auth')
+    _auth = getAuth(app)
+    return _auth
+}

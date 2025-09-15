@@ -1,189 +1,228 @@
-import { computed, reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { Timestamp } from 'firebase/firestore'
 import { generateSlug, generateRandomId } from '@/utils/id'
 import { useAuthStore } from '@/stores/authStore'
 import { createLogEntry } from '@/types/logType.js'
-import type { LogType } from '@/types/logType.js'
-import type { Tree, TreeWithLogs } from '@/types/treeType.js'
-import {
-    addTreeLog,
-    addTreeToFirestore,
-    fetchTreesFromFirestore,
-    fetchTreeWithLogs,
-    getNextWateringDate,
-    updateTreeInFirestore,
-} from '@/api/treeApi'
+import type { TreeLogsState } from '@/types/logType.js'
+import type { Tree, TreeEntity, TreeIndex } from '@/types/treeType.js'
+import { acceptHMRUpdate } from 'pinia'
 
 export const useTreesStore = defineStore('trees', () => {
+    const auth = useAuthStore()
+
     // === HARD CODED
     const _orchardId = 'sad'
     const _orgId = 'Drahovce'
-
-    const auth = useAuthStore()
     const CACHE_TTL = 5 * 60 * 1000
 
-    // === CACHE
-    const treesForOrchardCache = reactive(new Map<string, { data: Tree[]; fetchedAt: Timestamp }>())
-    const treesDetailCache = reactive(
-        new Map<string, { data: TreeWithLogs; fetchedAt: Timestamp }>(),
-    )
+    //state
+    const entities = ref<Record<string, TreeEntity>>({})
+    const indexByOrchard = ref<Record<string, TreeIndex>>({})
+    const logsByTreeId = ref<Record<string, TreeLogsState>>({})
 
-    // === GETTERS
-    function getTreesForOrchard(id: string) {
-        return treesForOrchardCache.get(id)?.data || []
+    //helpers
+    const isStale = (fetchedAt?: number) => !fetchedAt || Date.now() - fetchedAt > CACHE_TTL
+
+    //getters
+    const getById = (id: string) => entities.value[id]?.data
+
+    const listByOrchard = (orchardId: string): Tree[] => {
+        const idx = indexByOrchard.value[orchardId]
+        if (!idx) return []
+        return idx.ids.map((id) => entities.value[id]?.data).filter(Boolean) as Tree[]
     }
 
-    function getTreeData(id: string) {
-        return computed(() => treesDetailCache.get(id)?.data || null)
-    }
+    const getLogs = (treeId: string) => logsByTreeId.value[treeId]?.items ?? []
 
-    function getTreeMeta(id: string) {
-        return treesDetailCache.get(id)
-    }
+    //actions
+    async function fetchTrees(orgId: string, orchardId: string, options: { force?: boolean } = {}) {
+        const idx = indexByOrchard.value[orchardId]
+        const shouldFetch = options.force || !idx || isStale(idx.fetchedAt)
 
-    // === ACTIONS
+        if (!shouldFetch) return
+        const { apiFetchTrees } = await import('@/api/treeApi')
 
-    async function fetchTrees(orgId: string, orchardId: string) {
-        const now = Timestamp.now().toMillis()
-        const cache = treesForOrchardCache.get(orchardId)
+        const list = await apiFetchTrees(orgId, orchardId)
+        const now = Date.now()
 
-        if (cache && now - cache.fetchedAt.toMillis() < CACHE_TTL) {
-            console.log('[♻️] cached Orchard trees')
-            return
+        const patch: Record<string, TreeEntity> = {}
+        for (const t of list) {
+            patch[t.id] = { data: t, hydratation: 'full', fetchedAt: now }
         }
 
-        console.log('[📨] fetchTrees running')
-        const trees = await fetchTreesFromFirestore(orgId, orchardId)
-        treesForOrchardCache.set(orchardId, {
-            data: trees,
-            fetchedAt: Timestamp.now(),
-        })
-    }
-
-    async function fetchTree(orgId: string, orchardId: string, treeId: string) {
-        const now = Timestamp.now().toMillis()
-        const cache = getTreeMeta(treeId)
-
-        if (cache && now - cache.fetchedAt.toMillis() < CACHE_TTL) {
-            console.log('[♻️] cached Tree')
-            return
+        if (Object.keys(patch).length) {
+            entities.value = { ...entities.value, ...patch }
         }
 
-        console.log('[📨] fetchTree running')
-        const treeWithLogs = await fetchTreeWithLogs(orgId, orchardId, treeId)
-        treesDetailCache.set(treeId, {
-            data: treeWithLogs,
-            fetchedAt: Timestamp.now(),
-        })
+        indexByOrchard.value[orchardId] = {
+            ids: list.map((t) => t.id),
+            fetchedAt: now,
+        }
     }
 
-    async function addTree(
+    async function fetchTreeDetail(
         orgId: string,
         orchardId: string,
-        data: { treeName: string; treeVariety: string; treeOwner: string },
+        treeId: string,
+        options: { force?: boolean } = {},
     ) {
-        const treeSlug = generateSlug(data.treeName)
-        const treeId = generateRandomId()
+        const ent = entities.value[treeId]
+        const needsHydratation = !ent || ent?.hydratation !== 'full'
+        const stale = !ent || isStale(ent.fetchedAt)
 
-        const newTree: Tree = {
-            id: treeId,
-            slug: treeSlug,
-            name: data.treeName,
-            type: 'tree',
-            variety: data.treeVariety || null,
-            owner: data.treeOwner,
-            wateredUntil: null,
-            createdBy: auth.fullName || 'user',
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
+        if (!options.force && !(needsHydratation || stale)) return
+        const { apiFetchTree } = await import('@/api/treeApi')
+        const full = await apiFetchTree(orgId, orchardId, treeId)
+
+        const now = Date.now()
+        entities.value[treeId] = {
+            data: full,
+            hydratation: 'full',
+            fetchedAt: now,
+        }
+    }
+
+    async function fetchLogsForTree(
+        orgId: string,
+        orchardId: string,
+        treeId: string,
+        options: { force?: boolean } = {},
+    ) {
+        const logsState = logsByTreeId.value[treeId]
+        const should = options.force || !logsState || isStale(logsState.fetchedAt)
+        if (!should) return
+        const { apiFetchTreeLogs } = await import('@/api/treeApi')
+        const logs = await apiFetchTreeLogs(orgId, orchardId, treeId)
+        logsByTreeId.value[treeId] = { items: logs, fetchedAt: Date.now() }
+    }
+
+    async function waterTreeNow(orgId: string, orchardId: string, treeId: string) {
+        const tree = entities.value[treeId]
+
+        if (!tree) return
+
+        const { getNextWateringDate, apiUpdateTreeAndLog } = await import('@/api/treeApi')
+
+        // Minimal snapshot as a backup for failed DB update
+        const prevWatered = tree.data.wateredUntil
+        const prevUpdated = tree.data.updatedAt
+
+        //Optimistic local tree update
+        const { Timestamp } = await import('firebase/firestore/lite')
+        const now = Timestamp.now()
+        const currentWatered =
+            tree.data.wateredUntil && tree.data.wateredUntil.toMillis() > now.toMillis()
+                ? tree.data.wateredUntil
+                : now
+        const nextWatering = getNextWateringDate(currentWatered)
+        tree.data = { ...tree.data, wateredUntil: nextWatering, updatedAt: now }
+
+        //Optimistic local log update
+        const logs = logsByTreeId.value[treeId]?.items ?? []
+        const newLog = createLogEntry({
+            type: 'MANUAL_WATERING',
+            by: auth.fullName,
+            byId: auth.user?.uid || '',
+            prevWateredUntil: prevWatered,
+            newWateredUntil: nextWatering,
+        })
+        logsByTreeId.value[treeId] = {
+            items: [{ ...newLog }, ...logs],
+            fetchedAt: Date.now(),
         }
 
-        // optimistic update
-        const prev = treesForOrchardCache.get(orchardId)
-        const oldList = prev?.data || []
-        treesForOrchardCache.set(orchardId, {
-            data: [...oldList, newTree],
-            fetchedAt: Timestamp.now(),
-        })
+        // DB update
+        try {
+            await apiUpdateTreeAndLog(
+                orgId,
+                orchardId,
+                treeId,
+                { wateredUntil: nextWatering },
+                newLog,
+            )
+        } catch (e) {
+            // Revert tree update
+            tree.data = { ...tree.data, wateredUntil: prevWatered, updatedAt: prevUpdated }
 
-        const logEntry = createLogEntry({
+            const logState = logsByTreeId.value[treeId]
+            if (logState?.items?.length && (logState.items[0] as any).id === undefined) {
+                logState.items.shift()
+            }
+            throw e
+        }
+    }
+
+    async function createTree(
+        orgId: string,
+        orchardId: string,
+        data: Pick<Tree, 'name' | 'variety' | 'owner'>,
+    ) {
+        const treeSlug = generateSlug(data.name)
+        const treeId = generateRandomId()
+        const { Timestamp } = await import('firebase/firestore/lite')
+        const { apiCreateTreeAndLog } = await import('@/api/treeApi')
+        const now = Timestamp.now()
+
+        const newTree: Tree = {
+            status: 'active',
+            id: treeId,
+            slug: treeSlug,
+            name: data.name,
+            type: 'tree',
+            variety: data.variety || null,
+            owner: data.owner,
+            wateredUntil: null,
+            createdBy: auth.fullName || 'user',
+            createdAt: now,
+            updatedAt: now,
+        }
+
+        // Optimistic update tree
+        entities.value[treeId] = {
+            data: newTree,
+            hydratation: 'full',
+            fetchedAt: Date.now(),
+        }
+
+        // Optimistic add tree to orchard index
+        const idx = (indexByOrchard.value[orchardId] ??= { ids: [], fetchedAt: 0 })
+        let pushed = false
+        if (!idx.ids.includes(treeId)) {
+            idx.ids.push(treeId)
+            pushed = true
+        }
+        const createIndexNow = idx.ids.length === 1 // znamena ze index predtym neexistoval
+
+        // Optimistic add treelog
+        const newLog = createLogEntry({
             type: 'CREATE',
             by: auth.fullName,
             byId: auth.user?.uid || '',
+            prevWateredUntil: null,
+            newWateredUntil: null,
         })
-
-        try {
-            await addTreeToFirestore(orgId, orchardId, treeId, newTree)
-            await addTreeLog(orgId, orchardId, treeId, logEntry)
-        } catch (err) {
-            //rollback
-            treesForOrchardCache.set(orchardId, { data: oldList, fetchedAt: Timestamp.now() })
-            throw err
-        }
-    }
-
-    async function waterTree(
-        orgId: string,
-        orchardId: string,
-        treeId: string,
-        currentWateredUntil: Timestamp,
-    ) {
-        const now = Timestamp.now()
-        const base =
-            currentWateredUntil && currentWateredUntil.toMillis() > now.toMillis()
-                ? currentWateredUntil
-                : now
-        const nextWatering = getNextWateringDate(base)
-        await updateTreeData(orgId, orchardId, treeId, 'MANUAL_WATERING', {
-            wateredUntil: nextWatering,
-        })
-    }
-
-    async function updateTreeData(
-        orgId: string,
-        orchardId: string,
-        treeId: string,
-        logType: LogType,
-        updateFields: { wateredUntil: Timestamp },
-    ) {
-        const metaDetail = treesDetailCache.get(treeId)
-        if (!metaDetail) {
-            throw new Error(`Strom ${treeId} nie je v cache`)
-        }
-
-        const prevDetail = { ...metaDetail.data }
-        const prevOrchardEntry = treesForOrchardCache
-            .get(orchardId)
-            ?.data.find((t) => t.id === treeId)
-
-        const logEntry = createLogEntry({
-            type: logType,
-            by: auth.fullName,
-            byId: auth.user?.uid || '',
-            prevWateredUntil: prevDetail.wateredUntil || null,
-            newWateredUntil: updateFields.wateredUntil,
-        })
-
-        // optimistic update
-        metaDetail.data.wateredUntil = updateFields.wateredUntil
-        metaDetail.data.logs?.unshift(logEntry)
-
-        if (prevOrchardEntry) {
-            Object.assign(prevOrchardEntry, updateFields)
+        logsByTreeId.value[treeId] = {
+            items: [newLog],
+            fetchedAt: Date.now(),
         }
 
         try {
-            await updateTreeInFirestore(orgId, orchardId, treeId, updateFields)
-            await addTreeLog(orgId, orchardId, treeId, logEntry)
-        } catch (err) {
-            // rollback
-            Object.assign(metaDetail.data, prevDetail)
-            if (prevOrchardEntry) {
-                prevOrchardEntry.wateredUntil = prevDetail.wateredUntil || null
+            await apiCreateTreeAndLog(orgId, orchardId, treeId, newTree, newLog)
+        } catch (e) {
+            // If problem remove local changes
+            delete entities.value[treeId]
+            delete logsByTreeId.value[treeId]
+            if (pushed) idx.ids = idx.ids.filter((x) => x !== treeId)
+            if (createIndexNow && idx.ids.length === 0) {
+                delete indexByOrchard.value[orchardId]
             }
-            throw err
+
+            throw e
         }
+    }
+
+    if (import.meta.hot) {
+        import.meta.hot.accept(acceptHMRUpdate(useTreesStore, import.meta.hot))
     }
 
     return {
@@ -191,12 +230,17 @@ export const useTreesStore = defineStore('trees', () => {
         _orgId,
 
         fetchTrees,
-        getTreesForOrchard,
+        fetchTreeDetail,
+        fetchLogsForTree,
 
-        fetchTree,
-        getTreeData,
-        getTreeMeta,
-        addTree,
-        waterTree,
+        indexByOrchard,
+        entities,
+        logsByTreeId,
+
+        listByOrchard,
+        getById,
+        getLogs,
+        waterTreeNow,
+        createTree,
     }
 })

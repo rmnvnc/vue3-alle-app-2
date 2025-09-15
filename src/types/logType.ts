@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore'
+import { Timestamp } from 'firebase/firestore/lite'
 
 export type LogType = 'MANUAL_WATERING' | 'AUTOMATIC_WATERING' | 'CREATE'
 
@@ -15,8 +15,8 @@ export function createLogEntry(params: {
     type: LogType
     by: string | null
     byId: string | null
-    prevWateredUntil?: Timestamp | null
-    newWateredUntil?: Timestamp | null
+    prevWateredUntil: Timestamp | null
+    newWateredUntil: Timestamp | null
 }): TreeLogEntry {
     return {
         type: params.type,
@@ -26,4 +26,9 @@ export function createLogEntry(params: {
         newWateredUntil: params.newWateredUntil ?? null,
         loggedAt: Timestamp.now(),
     }
+}
+
+export interface TreeLogsState {
+    items: TreeLogEntry[]
+    fetchedAt: number
 }

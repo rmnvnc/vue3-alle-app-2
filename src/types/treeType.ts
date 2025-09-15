@@ -1,10 +1,11 @@
-import { TreeLogEntry } from '@/types/logType'
-import { Timestamp } from 'firebase/firestore'
+import { Timestamp } from 'firebase/firestore/lite'
 
+export type HydratationLevel = 'summary' | 'full'
 /**
  * Základný typ stromu – zodpovedá dátam uloženým vo Firestore v dokumente stromu.
  */
 export interface Tree {
+    status: 'active' | 'disabled'
     id: string
     name: string
     slug: string
@@ -17,11 +18,13 @@ export interface Tree {
     variety: string | null
 }
 
-/**
- * Rozšírený typ stromu s logmi – používa sa napríklad v cache alebo UI.
- */
-export interface TreeWithLogs extends Tree {
-    logs: TreeLogEntry[]
+export interface TreeEntity {
+    data: Tree
+    hydratation: HydratationLevel
+    fetchedAt: number
 }
 
-export type TreeUpdate = Partial<Pick<Tree, 'name' | 'slug' | 'wateredUntil' | 'updatedAt'>>
+export interface TreeIndex {
+    ids: string[]
+    fetchedAt: number
+}
