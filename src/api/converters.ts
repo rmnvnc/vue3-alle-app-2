@@ -9,6 +9,7 @@ export const treeConverter: FirestoreDataConverter<Tree> = {
     fromFirestore(snap: QueryDocumentSnapshot): Tree {
         const d = snap.data() as any
         return {
+            status: d.status,
             id: snap.id,
             name: d.name,
             slug: d.slug,

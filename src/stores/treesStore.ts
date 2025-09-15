@@ -164,6 +164,7 @@ export const useTreesStore = defineStore('trees', () => {
         const now = Timestamp.now()
 
         const newTree: Tree = {
+            status: 'active',
             id: treeId,
             slug: treeSlug,
             name: data.name,

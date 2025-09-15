@@ -5,6 +5,7 @@ export type HydratationLevel = 'summary' | 'full'
  * Základný typ stromu – zodpovedá dátam uloženým vo Firestore v dokumente stromu.
  */
 export interface Tree {
+    status: 'active' | 'disabled'
     id: string
     name: string
     slug: string

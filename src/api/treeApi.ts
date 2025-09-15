@@ -5,7 +5,7 @@ import type { UpdateData, Timestamp } from 'firebase/firestore/lite'
 import { treeConverter, logConverter } from './converters'
 
 export async function apiFetchTrees(orgId: string, orchardId: string): Promise<Tree[]> {
-    const { collection, getDocs } = await import('firebase/firestore/lite')
+    const { collection, getDocs, query, where } = await import('firebase/firestore/lite')
     const db = await getDb()
     const colRef = collection(
         db,
@@ -15,7 +15,7 @@ export async function apiFetchTrees(orgId: string, orchardId: string): Promise<T
         orchardId,
         'trees',
     ).withConverter(treeConverter)
-    const snap = await getDocs(colRef)
+    const snap = await getDocs(query(colRef, where('status', '==', 'active')))
     return snap.docs.map((d) => d.data())
 }
 
